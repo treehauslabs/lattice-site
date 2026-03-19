@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lattice — Blockchains That Scale Like Trees</title>
+    <meta name="description" content="A hierarchical blockchain framework where child chains inherit parent security through merged mining, and cross-chain transfers are verified by math — not middlemen.">
+    <style>
+        :root {
+            --bg: #07070d;
+            --bg-subtle: #0d0d17;
+            --bg-card: #111122;
+            --border: #1e1e3a;
+            --text: #e2e8f0;
+            --text-muted: #8892a8;
+            --accent: #22d3ee;
+            --accent-dim: rgba(34, 211, 238, 0.12);
+            --purple: #a78bfa;
+            --purple-dim: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-dim: rgba(52, 211, 153, 0.12);
+            --red: #f87171;
+            --red-dim: rgba(248, 113, 113, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 16px 0;
+            background: rgba(7, 7, 13, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.3s;
+        }
+
+        nav.scrolled { border-bottom-color: var(--border); }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .logo span { color: var(--accent); }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        .nav-gh {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-gh:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 180px 0 120px;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(ellipse, rgba(34, 211, 238, 0.06) 0%, rgba(167, 139, 250, 0.03) 40%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            background: var(--bg-subtle);
+        }
+
+        .hero-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            letter-spacing: -0.035em;
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        h1 .gradient {
+            background: linear-gradient(135deg, var(--accent), var(--purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            font-size: clamp(1rem, 2vw, 1.25rem);
+            color: var(--text-muted);
+            max-width: 640px;
+            margin: 0 auto 48px;
+            line-height: 1.8;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: var(--accent);
+            color: #07070d;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #06b6d4;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(34, 211, 238, 0.25);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--text-muted);
+        }
+
+        /* ── STATS BAR ── */
+        .stats {
+            padding: 48px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-subtle);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-value.cyan { color: var(--accent); }
+        .stat-value.purple { color: var(--purple); }
+        .stat-value.green { color: var(--green); }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ── PROBLEM ── */
+        .problem {
+            padding: 120px 0;
+        }
+
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: clamp(1.75rem, 4vw, 2.75rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        .section-desc {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            max-width: 640px;
+            line-height: 1.8;
+            margin-bottom: 48px;
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .problem-card {
+            padding: 32px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg-card);
+            transition: all 0.3s;
+        }
+
+        .problem-card:hover {
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+        }
+
+        .problem-card.bad { border-left: 3px solid var(--red); }
+        .problem-card.good { border-left: 3px solid var(--green); }
+
+        .problem-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+        }
+
+        .problem-icon.red { background: var(--red-dim); }
+        .problem-icon.green { background: var(--green-dim); }
+
+        .problem-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .problem-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* ── TREE VIS ── */
+        .tree-section {
+            padding: 120px 0;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tree-section .container {
+            text-align: center;
+        }
+
+        .tree-visual {
+            margin: 64px auto 0;
+            max-width: 720px;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: clamp(0.55rem, 1.2vw, 0.85rem);
+            line-height: 1.6;
+            text-align: left;
+            padding: 40px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg);
+            overflow-x: auto;
+        }
+
+        .tree-visual .nexus { color: var(--accent); font-weight: 700; }
+        .tree-visual .chain { color: var(--purple); }
+        .tree-visual .leaf { color: var(--green); }
+        .tree-visual .dim { color: #4a5568; }
+        .tree-visual .label { color: var(--text-muted); font-style: italic; }
+
+        /* ── HOW IT WORKS ── */
+        .how {
+            padding: 120px 0;
+        }
+
+        .how-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+
+        .how-card {
+            padding: 36px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg-card);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .how-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .how-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+        }
+
+        .how-card:nth-child(1)::before { background: linear-gradient(90deg, var(--accent), transparent); }
+        .how-card:nth-child(2)::before { background: linear-gradient(90deg, var(--purple), transparent); }
+        .how-card:nth-child(3)::before { background: linear-gradient(90deg, var(--green), transparent); }
+
+        .how-number {
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 16px;
+            opacity: 0.15;
+        }
+
+        .how-card:nth-child(1) .how-number { color: var(--accent); }
+        .how-card:nth-child(2) .how-number { color: var(--purple); }
+        .how-card:nth-child(3) .how-number { color: var(--green); }
+
+        .how-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: -0.01em;
+        }
+
+        .how-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* ── STACK ── */
+        .stack {
+            padding: 120px 0;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stack-layers {
+            margin-top: 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stack-layer {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            gap: 24px;
+            align-items: center;
+            padding: 20px 28px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            transition: all 0.2s;
+        }
+
+        .stack-layer:hover {
+            border-color: var(--text-muted);
+            background: var(--bg-card);
+        }
+
+        .stack-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .stack-label.l4 { color: var(--accent); }
+        .stack-label.l3 { color: var(--purple); }
+        .stack-label.l2 { color: var(--green); }
+        .stack-label.l1 { color: #f59e0b; }
+
+        .stack-content {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .stack-chip {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .stack-chip.l4 { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(34, 211, 238, 0.2); }
+        .stack-chip.l3 { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(167, 139, 250, 0.2); }
+        .stack-chip.l2 { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52, 211, 153, 0.2); }
+        .stack-chip.l1 { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); }
+
+        .stack-chip:hover { transform: translateY(-1px); filter: brightness(1.2); }
+
+        .stack-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: 8px;
+        }
+
+        /* ── BENCHMARKS ── */
+        .benchmarks {
+            padding: 120px 0;
+        }
+
+        .bench-table {
+            margin-top: 48px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .bench-table th {
+            text-align: left;
+            padding: 14px 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .bench-table td {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .bench-table tr:hover td { background: var(--bg-subtle); }
+
+        .bench-table .bench-name {
+            font-weight: 600;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        .bench-table .bench-value {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .bench-table .bench-layer {
+            font-size: 0.75rem;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .bench-table .bench-layer.storage { background: var(--green-dim); color: var(--green); }
+        .bench-table .bench-layer.network { background: var(--purple-dim); color: var(--purple); }
+        .bench-table .bench-layer.reputation { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+
+        /* ── CODE ── */
+        .code-section {
+            padding: 120px 0;
+            background: var(--bg-subtle);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-block {
+            margin-top: 48px;
+            max-width: 720px;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .code-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .code-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .code-dot.r { background: #ef4444; }
+        .code-dot.y { background: #f59e0b; }
+        .code-dot.g { background: #22c55e; }
+
+        pre {
+            padding: 28px;
+            overflow-x: auto;
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            line-height: 1.8;
+            background: var(--bg);
+        }
+
+        .kw { color: #c084fc; }
+        .fn { color: #22d3ee; }
+        .str { color: #34d399; }
+        .cm { color: #4a5568; }
+        .tp { color: #f59e0b; }
+        .num { color: #f87171; }
+
+        /* ── CROSS CHAIN ── */
+        .crosschain {
+            padding: 120px 0;
+        }
+
+        .crosschain-flow {
+            margin-top: 48px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            gap: 0;
+            align-items: center;
+        }
+
+        .flow-step {
+            padding: 28px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--bg-card);
+            text-align: center;
+        }
+
+        .flow-step h4 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .flow-step:nth-child(1) h4 { color: var(--accent); }
+        .flow-step:nth-child(3) h4 { color: var(--purple); }
+        .flow-step:nth-child(5) h4 { color: var(--green); }
+
+        .flow-step p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--text-muted);
+            padding: 0 8px;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 80px 0 48px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+
+        .footer-brand p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 12px;
+            max-width: 300px;
+        }
+
+        .footer-col h4 {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .footer-col a {
+            display: block;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            transition: color 0.2s;
+        }
+
+        .footer-col a:hover { color: var(--accent); }
+
+        .footer-bottom {
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            .problem-grid, .how-grid { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+            .crosschain-flow { grid-template-columns: 1fr; gap: 16px; }
+            .flow-arrow { transform: rotate(90deg); text-align: center; }
+            .footer-grid { grid-template-columns: 1fr 1fr; }
+            .stack-layer { grid-template-columns: 1fr; gap: 8px; }
+        }
+
+        @media (max-width: 600px) {
+            .nav-links { display: none; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── ANIMATIONS ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<nav id="nav">
+    <div class="container">
+        <a href="#" class="logo"><span>&lt;</span>Lattice<span>/&gt;</span></a>
+        <ul class="nav-links">
+            <li><a href="#problem">Why</a></li>
+            <li><a href="#how">How</a></li>
+            <li><a href="#stack">Stack</a></li>
+            <li><a href="#benchmarks">Performance</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs" class="nav-gh">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            Swift 6 &middot; Open Source &middot; MIT License
+        </div>
+        <h1>
+            One tree.<br>
+            <span class="gradient">Infinite chains.</span><br>
+            Zero bridges.
+        </h1>
+        <p class="hero-sub">
+            Lattice is a hierarchical blockchain framework where child chains inherit parent security through merged mining, and cross-chain transfers are verified by math&nbsp;&mdash; not&nbsp;middlemen.
+        </p>
+        <div class="hero-buttons">
+            <a href="https://github.com/treehauslabs/lattice" class="btn-primary">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                View on GitHub
+            </a>
+            <a href="#how" class="btn-secondary">How it works &darr;</a>
+        </div>
+    </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+    <div class="container">
+        <div class="stats-grid">
+            <div>
+                <div class="stat-value cyan">N&times;</div>
+                <div class="stat-label">Throughput scales with sibling chains</div>
+            </div>
+            <div>
+                <div class="stat-value purple">O(log n)</div>
+                <div class="stat-label">Trust-line routing hops</div>
+            </div>
+            <div>
+                <div class="stat-value green">28 ns</div>
+                <div class="stat-label">In-memory CAS lookup</div>
+            </div>
+            <div>
+                <div class="stat-value">$0</div>
+                <div class="stat-label">Bridge trust assumptions</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+    <div class="container">
+        <div class="section-label">The Problem</div>
+        <h2>Blockchains don't scale.<br>Bridges aren't safe.</h2>
+        <p class="section-desc">
+            The industry has tried two approaches. Both have fundamental flaws.
+        </p>
+        <div class="problem-grid">
+            <div class="problem-card bad">
+                <div class="problem-icon red">&#9724;</div>
+                <h3>Monolithic Chains</h3>
+                <p>Bitcoin does ~7 TPS. Ethereum L1 does ~15 TPS. One chain processes everything, and every node validates everything. Security is high but throughput has a hard ceiling.</p>
+            </div>
+            <div class="problem-card bad">
+                <div class="problem-icon red">&#9724;</div>
+                <h3>Bridges Are Attack Vectors</h3>
+                <p>Multi-chain ecosystems like Cosmos and Avalanche scale throughput but rely on trusted bridges for cross-chain transfers. Over $2 billion stolen in bridge exploits since 2022.</p>
+            </div>
+            <div class="problem-card good">
+                <div class="problem-icon green">&#9670;</div>
+                <h3>Lattice: A Third Way</h3>
+                <p>A tree of chains where parents secure children through merged mining. Cross-chain transfers verified by Merkle proofs against committed state roots. No middlemen. Just math.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- TREE VISUALIZATION -->
+<section class="tree-section" id="tree">
+    <div class="container">
+        <div class="section-label">Architecture</div>
+        <h2>A blockchain that grows like a tree</h2>
+        <p class="section-desc" style="margin: 20px auto 0;">
+            Every parent chain secures its children. Every child inherits the full hashrate of its parent through nested merged mining.
+        </p>
+        <div class="tree-visual">
+<span class="nexus">Nexus Chain</span> <span class="label">&larr; root, highest security, processes cross-chain receipts</span>
+<span class="dim">  |</span>
+<span class="dim">  |--- </span><span class="chain">Payment Chain</span> <span class="label">&larr; high-throughput value transfer</span>
+<span class="dim">  |     |--- </span><span class="leaf">Region-US</span>
+<span class="dim">  |     |--- </span><span class="leaf">Region-EU</span>
+<span class="dim">  |     \--- </span><span class="leaf">Region-APAC</span>
+<span class="dim">  |</span>
+<span class="dim">  |--- </span><span class="chain">Data Chain</span> <span class="label">&larr; content-addressed storage proofs</span>
+<span class="dim">  |     |--- </span><span class="leaf">Media</span>
+<span class="dim">  |     \--- </span><span class="leaf">Documents</span>
+<span class="dim">  |</span>
+<span class="dim">  \--- </span><span class="chain">Identity Chain</span> <span class="label">&larr; decentralized identity &amp; credentials</span>
+<span class="dim">        |--- </span><span class="leaf">Personal</span>
+<span class="dim">        \--- </span><span class="leaf">Enterprise</span>
+
+<span class="dim">Each chain mines simultaneously with one nonce search.</span>
+<span class="dim">N sibling chains = N&times; aggregate throughput, same security.</span>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+    <div class="container">
+        <div class="section-label">How It Works</div>
+        <h2>Three innovations, one protocol</h2>
+        <div class="how-grid">
+            <div class="how-card fade-in">
+                <div class="how-number">01</div>
+                <h3>Nested Merged Mining</h3>
+                <p>Every parent block embeds child block headers. A single proof-of-work search produces valid blocks for the entire tree simultaneously. Child chains inherit the full hashrate of the nexus chain &mdash; no security fragmentation.</p>
+            </div>
+            <div class="how-card fade-in">
+                <div class="how-number">02</div>
+                <h3>Trustless Cross-Chain</h3>
+                <p>No bridges. No oracles. No multisigs. Every child block commits a snapshot of its parent's state root. Cross-chain transfers are verified via Merkle proofs against these committed roots. The proof is the protocol.</p>
+            </div>
+            <div class="how-card fade-in">
+                <div class="how-number">03</div>
+                <h3>Content-Addressed Everything</h3>
+                <p>Blocks, transactions, and state are addressed by their cryptographic hash. Nodes only download data they care about. Light clients verify Merkle proofs without full state. If the hash matches, the content is correct.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CROSS-CHAIN FLOW -->
+<section class="crosschain">
+    <div class="container">
+        <div class="section-label">Cross-Chain Transfers</div>
+        <h2>Three steps, zero trust assumptions</h2>
+        <p class="section-desc">Deposit, receipt, withdrawal &mdash; each verified by Merkle proof against committed state roots.</p>
+        <div class="crosschain-flow">
+            <div class="flow-step">
+                <h4>1. Deposit</h4>
+                <p>User locks funds on the child chain via <code>DepositAction</code>. Included in child's <code>homestead.depositState</code>.</p>
+            </div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step">
+                <h4>2. Receipt</h4>
+                <p>Parent chain acknowledges the deposit via <code>ReceiptAction</code>. Merkle proof verifies deposit existed in child state.</p>
+            </div>
+            <div class="flow-arrow">&rarr;</div>
+            <div class="flow-step">
+                <h4>3. Withdrawal</h4>
+                <p>User claims funds by proving receipt exists in parent's <code>receiptState</code> &mdash; verified via committed <code>parentHomestead</code> root.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- STACK -->
+<section class="stack" id="stack">
+    <div class="container">
+        <div class="section-label">The Stack</div>
+        <h2>Seven libraries, one vision</h2>
+        <p class="section-desc">Every layer is a standalone Swift package. Use the full stack or pick the pieces you need.</p>
+        <div class="stack-layers">
+            <div class="stack-layer">
+                <div class="stack-label l4">Blockchain</div>
+                <div class="stack-content">
+                    <a href="https://github.com/treehauslabs/lattice" class="stack-chip l4">Lattice</a>
+                    <span class="stack-desc">Multi-chain consensus, state management, cross-chain protocol</span>
+                </div>
+            </div>
+            <div class="stack-layer">
+                <div class="stack-label l3">Networking</div>
+                <div class="stack-content">
+                    <a href="https://github.com/treehauslabs/Ivy" class="stack-chip l3">Ivy</a>
+                    <a href="https://github.com/treehauslabs/Tally" class="stack-chip l3">Tally</a>
+                    <span class="stack-desc">P2P with trust-line routing &middot; Reputation &amp; rate limiting</span>
+                </div>
+            </div>
+            <div class="stack-layer">
+                <div class="stack-label l2">Storage</div>
+                <div class="stack-content">
+                    <a href="https://github.com/treehauslabs/Acorn" class="stack-chip l2">Acorn</a>
+                    <a href="https://github.com/treehauslabs/AcornMemoryWorker" class="stack-chip l2">MemoryWorker</a>
+                    <a href="https://github.com/treehauslabs/AcornDiskWorker" class="stack-chip l2">DiskWorker</a>
+                    <span class="stack-desc">Content-addressed storage chain: memory &rarr; disk &rarr; network</span>
+                </div>
+            </div>
+            <div class="stack-layer">
+                <div class="stack-label l1">Data Structures</div>
+                <div class="stack-content">
+                    <a href="https://github.com/treehauslabs/cashew" class="stack-chip l1">cashew</a>
+                    <span class="stack-desc">Merkle dictionaries, arrays, sets &middot; Sparse proofs &middot; IPLD-compatible</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- BENCHMARKS -->
+<section class="benchmarks" id="benchmarks">
+    <div class="container">
+        <div class="section-label">Performance</div>
+        <h2>Measured, not estimated</h2>
+        <p class="section-desc">Real benchmarks from release builds on Apple Silicon. Every layer optimized for the hot path.</p>
+        <table class="bench-table">
+            <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>Median</th>
+                    <th>Layer</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="bench-name">Memory CAS get</td>
+                    <td class="bench-value">28 ns</td>
+                    <td><span class="bench-layer storage">Storage</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Bloom filter reject</td>
+                    <td class="bench-value">80 ns</td>
+                    <td><span class="bench-layer storage">Storage</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">shouldAllow (known peer)</td>
+                    <td class="bench-value">48 ns</td>
+                    <td><span class="bench-layer reputation">Reputation</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Reputation lookup</td>
+                    <td class="bench-value">89 ns</td>
+                    <td><span class="bench-layer reputation">Reputation</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Message serialize (ping)</td>
+                    <td class="bench-value">30 ns</td>
+                    <td><span class="bench-layer network">Network</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Message roundtrip (4KB)</td>
+                    <td class="bench-value">831 ns</td>
+                    <td><span class="bench-layer network">Network</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Router SHA-256 hash</td>
+                    <td class="bench-value">452 ns</td>
+                    <td><span class="bench-layer network">Network</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Common prefix length</td>
+                    <td class="bench-value">6 ns</td>
+                    <td><span class="bench-layer network">Network</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Disk CAS get (SSD)</td>
+                    <td class="bench-value">41 &micro;s</td>
+                    <td><span class="bench-layer storage">Storage</span></td>
+                </tr>
+                <tr>
+                    <td class="bench-name">Closest peers (1000&rarr;20)</td>
+                    <td class="bench-value">1.6 ms</td>
+                    <td><span class="bench-layer network">Network</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- CODE -->
+<section class="code-section">
+    <div class="container">
+        <div class="section-label" style="text-align: center;">Quick Start</div>
+        <h2 style="text-align: center;">Five lines to a running node</h2>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-dot r"></span>
+                <span class="code-dot y"></span>
+                <span class="code-dot g"></span>
+                &nbsp;&nbsp;main.swift
+            </div>
+<pre>
+<span class="kw">import</span> Acorn
+<span class="kw">import</span> AcornMemoryWorker
+<span class="kw">import</span> AcornDiskWorker
+<span class="kw">import</span> Ivy
+
+<span class="cm">// Build the storage chain: memory &rarr; disk &rarr; network</span>
+<span class="kw">let</span> memory = <span class="fn">MemoryCASWorker</span>()
+<span class="kw">let</span> disk = <span class="fn">DiskCASWorker</span>(directory: <span class="str">"/data/blocks"</span>)
+
+<span class="cm">// Start a P2P node with trust-line routing</span>
+<span class="kw">let</span> node = <span class="fn">Ivy</span>(config: <span class="fn">IvyConfig</span>(
+    publicKey: myKey,
+    bootstrapPeers: [seed1, seed2],
+))
+<span class="kw">try await</span> node.<span class="fn">start</span>()
+
+<span class="cm">// Fetch any content by hash &mdash; cascades through the chain</span>
+<span class="kw">let</span> data = <span class="kw">await</span> chain.<span class="fn">get</span>(cid: blockHash)
+</pre>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div class="container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <a href="#" class="logo"><span>&lt;</span>Lattice<span>/&gt;</span></a>
+                <p>A hierarchical blockchain framework built in Swift. Scalable throughput, trustless cross-chain, content-addressed everything.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Protocol</h4>
+                <a href="https://github.com/treehauslabs/lattice">Lattice</a>
+                <a href="https://github.com/treehauslabs/cashew">cashew</a>
+            </div>
+            <div class="footer-col">
+                <h4>Infrastructure</h4>
+                <a href="https://github.com/treehauslabs/Ivy">Ivy</a>
+                <a href="https://github.com/treehauslabs/Tally">Tally</a>
+                <a href="https://github.com/treehauslabs/Acorn">Acorn</a>
+            </div>
+            <div class="footer-col">
+                <h4>Resources</h4>
+                <a href="https://github.com/treehauslabs">GitHub</a>
+                <a href="https://github.com/treehauslabs/lattice#readme">Documentation</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>Built by <a href="https://github.com/treehauslabs" style="color: var(--accent); text-decoration: none;">Treehaus Labs</a></span>
+            <span>Swift 6 &middot; macOS &middot; iOS &middot; Linux</span>
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Nav scroll effect
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+        nav.classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    // Fade-in on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
