@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLI — Lattice</title>
+    <meta name="description" content="Command-line interface for the Lattice network. Manage nodes, query chains, send transactions, and generate proofs from your terminal.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%2322d3ee'/><circle cx='6' cy='22' r='3' fill='%23a78bfa'/><circle cx='16' cy='22' r='3' fill='%23a78bfa'/><circle cx='26' cy='22' r='3' fill='%23a78bfa'/><line x1='16' y1='10' x2='6' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='16' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='26' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg-subtle: #0b0b14;
+            --bg-card: #0f0f1e;
+            --border: #1a1a33;
+            --text: #e8eaf0;
+            --text-dim: #7c829a;
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.15);
+            --purple: #a78bfa;
+            --purple-glow: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --amber: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 0;
+            background: rgba(6, 6, 11, 0.8);
+            backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .inner { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+
+        .logo {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em;
+            color: var(--text); text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 28px; height: 28px; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a.active { color: var(--cyan); }
+
+        .nav-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--cyan-glow); border-color: var(--cyan); color: var(--cyan); }
+
+        /* ── HEADER ── */
+        .doc-header {
+            padding: 140px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-eyebrow {
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--purple); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .doc-eyebrow::before {
+            content: ''; width: 24px; height: 1px; background: var(--purple);
+        }
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            line-height: 1.12; margin-bottom: 16px;
+        }
+        .doc-sub {
+            font-size: 1.05rem; color: var(--text-dim);
+            max-width: 600px; line-height: 1.75;
+        }
+
+        /* ── CONTENT ── */
+        .doc-content { padding: 64px 0 120px; }
+
+        h2 {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 16px;
+            padding-top: 32px; border-top: 1px solid var(--border);
+        }
+        h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+        h3 {
+            font-size: 1.1rem; font-weight: 700;
+            margin-top: 32px; margin-bottom: 10px;
+        }
+
+        p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.75; }
+        p strong { color: var(--text); font-weight: 600; }
+
+        ul, ol { color: var(--text-dim); margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; line-height: 1.65; }
+        li strong { color: var(--text); font-weight: 600; }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.88em; background: var(--bg-card);
+            padding: 2px 7px; border-radius: 5px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px 24px;
+            overflow-x: auto; margin-bottom: 24px;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            font-size: 0.85rem; line-height: 1.7;
+            color: var(--text-dim);
+        }
+        pre code .cm { color: #4a5568; }
+        pre code .val { color: var(--cyan); }
+        pre code .str { color: var(--green); }
+        pre code .flag { color: var(--purple); }
+        pre code .cmd { color: var(--text); font-weight: 600; }
+
+        .cmd-group {
+            margin-bottom: 12px;
+        }
+        .cmd-entry {
+            padding: 16px 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+            margin-bottom: 8px;
+        }
+        .cmd-name {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.9rem; font-weight: 700;
+            color: var(--text); margin-bottom: 4px;
+        }
+        .cmd-desc {
+            font-size: 0.82rem; color: var(--text-dim);
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 40px 0; border-top: 1px solid var(--border);
+        }
+        footer .inner {
+            max-width: 1120px; margin: 0 auto; padding: 0 28px;
+            display: flex; justify-content: space-between;
+            font-size: 0.78rem; color: var(--text-dim);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="5" r="3.5" fill="#22d3ee"/>
+                <circle cx="5" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="14" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="23" cy="20" r="2.5" fill="#a78bfa"/>
+                <line x1="14" y1="8.5" x2="5" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="14" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="23" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+            Lattice
+        </a>
+        <ul class="nav-links">
+            <li><a href="gateway.html">Gateway</a></li>
+            <li><a href="cli.html" class="active">CLI</a></li>
+            <li><a href="wallet.html">Wallet</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs/lattice-cli" class="nav-cta">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<section class="doc-header">
+    <div class="container">
+        <div class="doc-eyebrow">Tools</div>
+        <h1>CLI</h1>
+        <p class="doc-sub">
+            Command-line interface for the Lattice network. Manage nodes, query chains, send transactions, and generate Merkle proofs from your terminal.
+        </p>
+    </div>
+</section>
+
+<section class="doc-content">
+    <div class="container">
+
+        <h2>Install</h2>
+        <pre><code><span class="cm"># Build from source</span>
+git clone https://github.com/treehauslabs/lattice-cli.git
+cd lattice-cli
+swift build -c release
+
+<span class="cm"># Move to PATH</span>
+cp .build/release/lattice /usr/local/bin/
+
+<span class="cm"># Verify</span>
+lattice <span class="flag">--version</span></code></pre>
+
+        <h2>Configuration</h2>
+        <p>
+            The CLI reads configuration from <code>~/.lattice/config.toml</code>. Set it up once and all commands use the same node connection.
+        </p>
+        <pre><code><span class="cm"># Initialize default config</span>
+lattice <span class="cmd">init</span>
+
+<span class="cm"># Point to a running gateway</span>
+lattice <span class="cmd">config set</span> <span class="flag">--gateway</span> <span class="str">http://localhost:8545</span>
+
+<span class="cm"># Set default chain</span>
+lattice <span class="cmd">config set</span> <span class="flag">--chain</span> <span class="str">payments</span>
+
+<span class="cm"># View current config</span>
+lattice <span class="cmd">config show</span></code></pre>
+
+        <h2>Commands</h2>
+
+        <h3>Node</h3>
+        <div class="cmd-group">
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice node status</div>
+                <div class="cmd-desc">Show connected node's sync state, peer count, and chain heights</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice node peers</div>
+                <div class="cmd-desc">List connected peers with reputation scores and latency</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice node chains</div>
+                <div class="cmd-desc">List all chains in the hierarchy with heights and hash rates</div>
+            </div>
+        </div>
+
+        <h3>Blocks</h3>
+        <div class="cmd-group">
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice block get &lt;height|hash&gt;</div>
+                <div class="cmd-desc">Fetch a block by height or hash. Displays header, tx count, and state root.</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice block latest</div>
+                <div class="cmd-desc">Show the latest block on the current chain</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice block watch</div>
+                <div class="cmd-desc">Stream new blocks as they are committed (Ctrl+C to stop)</div>
+            </div>
+        </div>
+
+        <h3>Transactions</h3>
+        <div class="cmd-group">
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice tx get &lt;hash&gt;</div>
+                <div class="cmd-desc">Fetch transaction details and confirmation status</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice tx send --to &lt;addr&gt; --amount &lt;n&gt;</div>
+                <div class="cmd-desc">Sign and submit a transaction. Uses the default wallet key.</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice tx pending</div>
+                <div class="cmd-desc">List pending transactions in the mempool</div>
+            </div>
+        </div>
+
+        <h3>Cross-Chain</h3>
+        <div class="cmd-group">
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice transfer --from &lt;chain&gt; --to &lt;chain&gt; --amount &lt;n&gt;</div>
+                <div class="cmd-desc">Initiate a cross-chain transfer with automatic Merkle proof generation</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice proof get --chain &lt;id&gt; --key &lt;key&gt;</div>
+                <div class="cmd-desc">Generate a Merkle inclusion proof for a state key</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice proof verify &lt;proof-file&gt;</div>
+                <div class="cmd-desc">Verify a Merkle proof against the current chain state</div>
+            </div>
+        </div>
+
+        <h3>State</h3>
+        <div class="cmd-group">
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice state get &lt;key&gt;</div>
+                <div class="cmd-desc">Read a value from the current chain's state tree</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice state list --prefix &lt;prefix&gt;</div>
+                <div class="cmd-desc">List state keys matching a prefix</div>
+            </div>
+        </div>
+
+        <h3>Wallet</h3>
+        <div class="cmd-group">
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice wallet create</div>
+                <div class="cmd-desc">Generate a new keypair and save to the local keystore</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice wallet list</div>
+                <div class="cmd-desc">List all keys in the local keystore</div>
+            </div>
+            <div class="cmd-entry">
+                <div class="cmd-name">lattice wallet balance [--chain &lt;id&gt;]</div>
+                <div class="cmd-desc">Check balance for the active key, optionally on a specific chain</div>
+            </div>
+        </div>
+
+        <h2>Examples</h2>
+
+        <h3>Check node status and latest block</h3>
+        <pre><code>$ lattice <span class="cmd">node status</span>
+<span class="cm">Node:     127.0.0.1:8545</span>
+<span class="cm">Synced:   true</span>
+<span class="cm">Height:   184,293</span>
+<span class="cm">Peers:    12</span>
+<span class="cm">Chains:   7</span>
+
+$ lattice <span class="cmd">block latest</span>
+<span class="cm">Height:     184,293</span>
+<span class="cm">Hash:       a1b2c3d4e5f6...</span>
+<span class="cm">State Root: 789abcdef012...</span>
+<span class="cm">Txns:       23</span>
+<span class="cm">Time:       2.4s ago</span></code></pre>
+
+        <h3>Send a cross-chain transfer</h3>
+        <pre><code>$ lattice <span class="cmd">transfer</span> <span class="flag">--from</span> <span class="str">payments</span> <span class="flag">--to</span> <span class="str">identity</span> <span class="flag">--amount</span> <span class="val">100</span>
+<span class="cm">Deposit tx:   0xabc123... (payments, height 184,294)</span>
+<span class="cm">Proof:        generated (3 nodes, 96 bytes)</span>
+<span class="cm">Withdrawal:   0xdef456... (identity, pending)</span>
+<span class="cm">Status:       confirmed in 2 blocks</span></code></pre>
+
+        <h2>Shell Completions</h2>
+        <pre><code><span class="cm"># Bash</span>
+lattice <span class="cmd">completions bash</span> > /etc/bash_completion.d/lattice
+
+<span class="cm"># Zsh</span>
+lattice <span class="cmd">completions zsh</span> > ~/.zsh/completions/_lattice
+
+<span class="cm"># Fish</span>
+lattice <span class="cmd">completions fish</span> > ~/.config/fish/completions/lattice.fish</code></pre>
+
+    </div>
+</section>
+
+<footer>
+    <div class="inner">
+        <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
+        <span><a href="index.html">Home</a> &middot; <a href="gateway.html">Gateway</a> &middot; <a href="cli.html">CLI</a> &middot; <a href="wallet.html">Wallet</a></span>
+    </div>
+</footer>
+
+</body>
+</html>

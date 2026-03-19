@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gateway — Lattice</title>
+    <meta name="description" content="HTTP and JSON-RPC gateway to the Lattice network. Query blocks, submit transactions, and stream events over WebSocket.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%2322d3ee'/><circle cx='6' cy='22' r='3' fill='%23a78bfa'/><circle cx='16' cy='22' r='3' fill='%23a78bfa'/><circle cx='26' cy='22' r='3' fill='%23a78bfa'/><line x1='16' y1='10' x2='6' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='16' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='26' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg-subtle: #0b0b14;
+            --bg-card: #0f0f1e;
+            --border: #1a1a33;
+            --text: #e8eaf0;
+            --text-dim: #7c829a;
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.15);
+            --purple: #a78bfa;
+            --purple-glow: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --amber: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+        .mono { font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace; }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 0;
+            background: rgba(6, 6, 11, 0.8);
+            backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .inner { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+
+        .logo {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em;
+            color: var(--text); text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 28px; height: 28px; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a.active { color: var(--cyan); }
+
+        .nav-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--cyan-glow); border-color: var(--cyan); color: var(--cyan); }
+
+        /* ── HEADER ── */
+        .doc-header {
+            padding: 140px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-eyebrow {
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--cyan); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .doc-eyebrow::before {
+            content: ''; width: 24px; height: 1px; background: var(--cyan);
+        }
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            line-height: 1.12; margin-bottom: 16px;
+        }
+        .doc-sub {
+            font-size: 1.05rem; color: var(--text-dim);
+            max-width: 600px; line-height: 1.75;
+        }
+
+        /* ── CONTENT ── */
+        .doc-content { padding: 64px 0 120px; }
+
+        h2 {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 16px;
+            padding-top: 32px; border-top: 1px solid var(--border);
+        }
+        h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+        h3 {
+            font-size: 1.1rem; font-weight: 700;
+            margin-top: 32px; margin-bottom: 10px;
+        }
+
+        p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.75; }
+        p strong { color: var(--text); font-weight: 600; }
+
+        ul, ol { color: var(--text-dim); margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; line-height: 1.65; }
+        li strong { color: var(--text); font-weight: 600; }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.88em; background: var(--bg-card);
+            padding: 2px 7px; border-radius: 5px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px 24px;
+            overflow-x: auto; margin-bottom: 24px;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            font-size: 0.85rem; line-height: 1.7;
+            color: var(--text-dim);
+        }
+        pre code .kw { color: var(--purple); }
+        pre code .str { color: var(--green); }
+        pre code .cm { color: #4a5568; }
+        pre code .val { color: var(--cyan); }
+
+        .endpoint {
+            padding: 20px 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+            margin-bottom: 12px; display: flex; align-items: center; gap: 12px;
+        }
+        .method {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.75rem; font-weight: 700;
+            padding: 4px 10px; border-radius: 6px;
+            min-width: 52px; text-align: center;
+        }
+        .method.get { background: var(--cyan-glow); color: var(--cyan); }
+        .method.post { background: var(--purple-glow); color: var(--purple); }
+        .method.ws { background: var(--green-glow); color: var(--green); }
+        .endpoint-path {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.88rem; color: var(--text);
+        }
+        .endpoint-desc {
+            font-size: 0.82rem; color: var(--text-dim); margin-left: auto;
+        }
+
+        .feature-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-bottom: 24px;
+        }
+        .feature-card {
+            padding: 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+        }
+        .feature-card h4 {
+            font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;
+        }
+        .feature-card p { font-size: 0.85rem; margin-bottom: 0; }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 40px 0; border-top: 1px solid var(--border);
+        }
+        footer .inner {
+            max-width: 1120px; margin: 0 auto; padding: 0 28px;
+            display: flex; justify-content: space-between;
+            font-size: 0.78rem; color: var(--text-dim);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .feature-grid { grid-template-columns: 1fr; }
+            .endpoint { flex-wrap: wrap; }
+            .endpoint-desc { margin-left: 0; margin-top: 4px; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="5" r="3.5" fill="#22d3ee"/>
+                <circle cx="5" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="14" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="23" cy="20" r="2.5" fill="#a78bfa"/>
+                <line x1="14" y1="8.5" x2="5" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="14" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="23" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+            Lattice
+        </a>
+        <ul class="nav-links">
+            <li><a href="gateway.html" class="active">Gateway</a></li>
+            <li><a href="cli.html">CLI</a></li>
+            <li><a href="wallet.html">Wallet</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs/lattice-gateway" class="nav-cta">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<section class="doc-header">
+    <div class="container">
+        <div class="doc-eyebrow">Tools</div>
+        <h1>Gateway</h1>
+        <p class="doc-sub">
+            HTTP and JSON-RPC gateway to the Lattice network. Query blocks, submit transactions, and stream chain events over WebSocket.
+        </p>
+    </div>
+</section>
+
+<section class="doc-content">
+    <div class="container">
+
+        <h2>Overview</h2>
+        <p>
+            The Lattice Gateway exposes the node's internal APIs over HTTP, JSON-RPC, and WebSocket. It is the primary interface for wallets, explorers, and applications to interact with the Lattice network. Built in Swift using the same actor-based concurrency model as the rest of the stack.
+        </p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>REST + JSON-RPC</h4>
+                <p>Query chain state, blocks, and transactions via familiar HTTP endpoints or JSON-RPC 2.0 calls.</p>
+            </div>
+            <div class="feature-card">
+                <h4>WebSocket Streams</h4>
+                <p>Subscribe to new blocks, pending transactions, and cross-chain events in real time.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Multi-Chain Aware</h4>
+                <p>Target any chain in the hierarchy by ID. Query cross-chain proofs and state roots across siblings.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Lightweight</h4>
+                <p>Runs as a standalone process or embedded in a full node. Configurable rate limiting and CORS.</p>
+            </div>
+        </div>
+
+        <h2>Quick Start</h2>
+
+        <h3>Build and run</h3>
+        <pre><code><span class="cm"># Clone and build</span>
+git clone https://github.com/treehauslabs/lattice-gateway.git
+cd lattice-gateway
+swift build -c release
+
+<span class="cm"># Run with defaults (localhost:8545)</span>
+.build/release/lattice-gateway
+
+<span class="cm"># Custom port and node endpoint</span>
+.build/release/lattice-gateway --port <span class="val">8080</span> --node <span class="str">127.0.0.1:9000</span></code></pre>
+
+        <h3>Configuration</h3>
+        <p>The gateway reads from <code>gateway.toml</code> or command-line flags. Key options:</p>
+        <ul>
+            <li><strong><code>--port</code></strong> &mdash; HTTP listen port (default: <code>8545</code>)</li>
+            <li><strong><code>--node</code></strong> &mdash; Lattice node RPC address to connect to</li>
+            <li><strong><code>--ws</code></strong> &mdash; Enable WebSocket endpoint (default: enabled)</li>
+            <li><strong><code>--cors</code></strong> &mdash; Allowed origins for CORS (default: <code>*</code>)</li>
+            <li><strong><code>--rate-limit</code></strong> &mdash; Max requests per second per IP (default: <code>100</code>)</li>
+            <li><strong><code>--chain</code></strong> &mdash; Default chain ID when none is specified in requests</li>
+        </ul>
+
+        <h2>REST Endpoints</h2>
+
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/blocks/:hash</span>
+            <span class="endpoint-desc">Fetch block by hash</span>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/blocks/latest</span>
+            <span class="endpoint-desc">Latest block on chain</span>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/blocks/:height</span>
+            <span class="endpoint-desc">Fetch block by height</span>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/tx/:hash</span>
+            <span class="endpoint-desc">Transaction by hash</span>
+        </div>
+        <div class="endpoint">
+            <span class="method post">POST</span>
+            <span class="endpoint-path">/v1/tx</span>
+            <span class="endpoint-desc">Submit signed transaction</span>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/chain/:id/state/:key</span>
+            <span class="endpoint-desc">Read state from a specific chain</span>
+        </div>
+        <div class="endpoint">
+            <span class="method get">GET</span>
+            <span class="endpoint-path">/v1/proof/:chain/:key</span>
+            <span class="endpoint-desc">Merkle proof for cross-chain verification</span>
+        </div>
+        <div class="endpoint">
+            <span class="method ws">WS</span>
+            <span class="endpoint-path">/v1/ws</span>
+            <span class="endpoint-desc">WebSocket stream</span>
+        </div>
+
+        <h2>JSON-RPC</h2>
+        <p>
+            The gateway also accepts JSON-RPC 2.0 calls on the same port. Send a POST request with <code>Content-Type: application/json</code>.
+        </p>
+        <pre><code><span class="cm">// Request</span>
+{
+  <span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,
+  <span class="str">"method"</span>: <span class="str">"lattice_getBlock"</span>,
+  <span class="str">"params"</span>: { <span class="str">"height"</span>: <span class="val">42</span> },
+  <span class="str">"id"</span>: <span class="val">1</span>
+}
+
+<span class="cm">// Response</span>
+{
+  <span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,
+  <span class="str">"result"</span>: {
+    <span class="str">"hash"</span>: <span class="str">"a1b2c3..."</span>,
+    <span class="str">"height"</span>: <span class="val">42</span>,
+    <span class="str">"parent"</span>: <span class="str">"d4e5f6..."</span>,
+    <span class="str">"stateRoot"</span>: <span class="str">"789abc..."</span>,
+    <span class="str">"txCount"</span>: <span class="val">17</span>
+  },
+  <span class="str">"id"</span>: <span class="val">1</span>
+}</code></pre>
+
+        <h3>Available methods</h3>
+        <ul>
+            <li><strong><code>lattice_getBlock</code></strong> &mdash; Get block by height or hash</li>
+            <li><strong><code>lattice_getTransaction</code></strong> &mdash; Get transaction by hash</li>
+            <li><strong><code>lattice_sendTransaction</code></strong> &mdash; Submit a signed transaction</li>
+            <li><strong><code>lattice_getState</code></strong> &mdash; Read state by key on a given chain</li>
+            <li><strong><code>lattice_getProof</code></strong> &mdash; Merkle proof for a state key</li>
+            <li><strong><code>lattice_chainInfo</code></strong> &mdash; Chain metadata (height, hash rate, peer count)</li>
+            <li><strong><code>lattice_subscribe</code></strong> &mdash; Subscribe to events (WebSocket only)</li>
+        </ul>
+
+        <h2>WebSocket Subscriptions</h2>
+        <p>
+            Connect to <code>/v1/ws</code> and send a <code>lattice_subscribe</code> call to start receiving events.
+        </p>
+        <pre><code><span class="cm">// Subscribe to new blocks on chain "payments"</span>
+{
+  <span class="str">"jsonrpc"</span>: <span class="str">"2.0"</span>,
+  <span class="str">"method"</span>: <span class="str">"lattice_subscribe"</span>,
+  <span class="str">"params"</span>: {
+    <span class="str">"event"</span>: <span class="str">"newBlock"</span>,
+    <span class="str">"chain"</span>: <span class="str">"payments"</span>
+  },
+  <span class="str">"id"</span>: <span class="val">1</span>
+}</code></pre>
+        <p>Supported events:</p>
+        <ul>
+            <li><strong><code>newBlock</code></strong> &mdash; Emitted when a new block is committed</li>
+            <li><strong><code>pendingTx</code></strong> &mdash; Emitted when a transaction enters the mempool</li>
+            <li><strong><code>crossChain</code></strong> &mdash; Emitted on cross-chain transfer completions</li>
+            <li><strong><code>stateChange</code></strong> &mdash; Emitted when a specific state key is modified</li>
+        </ul>
+
+    </div>
+</section>
+
+<footer>
+    <div class="inner">
+        <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
+        <span><a href="index.html">Home</a> &middot; <a href="gateway.html">Gateway</a> &middot; <a href="cli.html">CLI</a> &middot; <a href="wallet.html">Wallet</a></span>
+    </div>
+</footer>
+
+</body>
+</html>

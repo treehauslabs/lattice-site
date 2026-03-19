@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet — Lattice</title>
+    <meta name="description" content="Swift wallet library and reference app for the Lattice network. Key management, transaction signing, and cross-chain transfers.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%2322d3ee'/><circle cx='6' cy='22' r='3' fill='%23a78bfa'/><circle cx='16' cy='22' r='3' fill='%23a78bfa'/><circle cx='26' cy='22' r='3' fill='%23a78bfa'/><line x1='16' y1='10' x2='6' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='16' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='26' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg-subtle: #0b0b14;
+            --bg-card: #0f0f1e;
+            --border: #1a1a33;
+            --text: #e8eaf0;
+            --text-dim: #7c829a;
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.15);
+            --purple: #a78bfa;
+            --purple-glow: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --amber: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 0;
+            background: rgba(6, 6, 11, 0.8);
+            backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .inner { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+
+        .logo {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em;
+            color: var(--text); text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 28px; height: 28px; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a.active { color: var(--cyan); }
+
+        .nav-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--cyan-glow); border-color: var(--cyan); color: var(--cyan); }
+
+        /* ── HEADER ── */
+        .doc-header {
+            padding: 140px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-eyebrow {
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--green); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .doc-eyebrow::before {
+            content: ''; width: 24px; height: 1px; background: var(--green);
+        }
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            line-height: 1.12; margin-bottom: 16px;
+        }
+        .doc-sub {
+            font-size: 1.05rem; color: var(--text-dim);
+            max-width: 600px; line-height: 1.75;
+        }
+
+        /* ── CONTENT ── */
+        .doc-content { padding: 64px 0 120px; }
+
+        h2 {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 16px;
+            padding-top: 32px; border-top: 1px solid var(--border);
+        }
+        h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+        h3 {
+            font-size: 1.1rem; font-weight: 700;
+            margin-top: 32px; margin-bottom: 10px;
+        }
+
+        p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.75; }
+        p strong { color: var(--text); font-weight: 600; }
+
+        ul, ol { color: var(--text-dim); margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; line-height: 1.65; }
+        li strong { color: var(--text); font-weight: 600; }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.88em; background: var(--bg-card);
+            padding: 2px 7px; border-radius: 5px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px 24px;
+            overflow-x: auto; margin-bottom: 24px;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            font-size: 0.85rem; line-height: 1.7;
+            color: var(--text-dim);
+        }
+        pre code .kw { color: var(--purple); }
+        pre code .str { color: var(--green); }
+        pre code .cm { color: #4a5568; }
+        pre code .val { color: var(--cyan); }
+        pre code .type { color: var(--amber); }
+        pre code .fn { color: var(--text); }
+
+        .feature-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+            margin-bottom: 24px;
+        }
+        .feature-card {
+            padding: 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+        }
+        .feature-card h4 {
+            font-size: 0.95rem; font-weight: 700; margin-bottom: 6px;
+        }
+        .feature-card p { font-size: 0.85rem; margin-bottom: 0; }
+
+        .platform-badges {
+            display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px;
+        }
+        .badge {
+            padding: 6px 14px; border-radius: 8px;
+            font-size: 0.82rem; font-weight: 600;
+            border: 1px solid var(--border); background: var(--bg-card);
+            color: var(--text-dim);
+        }
+        .badge.supported { border-color: rgba(52, 211, 153, 0.3); color: var(--green); background: var(--green-glow); }
+
+        /* ── FOOTER ── */
+        footer {
+            padding: 40px 0; border-top: 1px solid var(--border);
+        }
+        footer .inner {
+            max-width: 1120px; margin: 0 auto; padding: 0 28px;
+            display: flex; justify-content: space-between;
+            font-size: 0.78rem; color: var(--text-dim);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .feature-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="5" r="3.5" fill="#22d3ee"/>
+                <circle cx="5" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="14" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="23" cy="20" r="2.5" fill="#a78bfa"/>
+                <line x1="14" y1="8.5" x2="5" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="14" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="23" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+            Lattice
+        </a>
+        <ul class="nav-links">
+            <li><a href="gateway.html">Gateway</a></li>
+            <li><a href="cli.html">CLI</a></li>
+            <li><a href="wallet.html" class="active">Wallet</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs/lattice-wallet" class="nav-cta">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<section class="doc-header">
+    <div class="container">
+        <div class="doc-eyebrow">Tools</div>
+        <h1>Wallet</h1>
+        <p class="doc-sub">
+            Swift wallet library and reference app for the Lattice network. Key management, transaction signing, cross-chain transfers, and multi-chain balance tracking.
+        </p>
+    </div>
+</section>
+
+<section class="doc-content">
+    <div class="container">
+
+        <h2>Overview</h2>
+        <p>
+            The Lattice Wallet is both a <strong>Swift package</strong> you can embed in any app and a <strong>reference implementation</strong> showing how to manage keys, sign transactions, and perform cross-chain transfers on the Lattice network. It uses Apple's CryptoKit on Apple platforms and swift-crypto on Linux.
+        </p>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>Key Management</h4>
+                <p>Generate, import, and export Ed25519 keypairs. Keys are encrypted at rest using AES-256-GCM with a passphrase-derived key.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Transaction Signing</h4>
+                <p>Build and sign transactions locally. Supports single-chain transfers, cross-chain transfers, and state updates.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Multi-Chain Balances</h4>
+                <p>Query balances across all chains in the hierarchy from a single wallet instance. Aggregated and per-chain views.</p>
+            </div>
+            <div class="feature-card">
+                <h4>Cross-Platform</h4>
+                <p>Runs on macOS, iOS, tvOS, watchOS, visionOS, and Linux. Same API everywhere, no platform conditionals needed.</p>
+            </div>
+        </div>
+
+        <h3>Platform support</h3>
+        <div class="platform-badges">
+            <span class="badge supported">macOS</span>
+            <span class="badge supported">iOS</span>
+            <span class="badge supported">tvOS</span>
+            <span class="badge supported">watchOS</span>
+            <span class="badge supported">visionOS</span>
+            <span class="badge supported">Linux</span>
+        </div>
+
+        <h2>Installation</h2>
+
+        <h3>Swift Package Manager</h3>
+        <p>Add the wallet as a dependency in your <code>Package.swift</code>:</p>
+        <pre><code><span class="kw">dependencies</span>: [
+    .package(
+        url: <span class="str">"https://github.com/treehauslabs/lattice-wallet.git"</span>,
+        from: <span class="str">"0.1.0"</span>
+    )
+]</code></pre>
+        <p>Then add <code>"LatticeWallet"</code> to your target's dependencies.</p>
+
+        <h3>Build from source</h3>
+        <pre><code><span class="cm"># Clone and build</span>
+git clone https://github.com/treehauslabs/lattice-wallet.git
+cd lattice-wallet
+swift build -c release
+
+<span class="cm"># Run tests</span>
+swift test</code></pre>
+
+        <h2>Usage</h2>
+
+        <h3>Create a wallet and generate keys</h3>
+        <pre><code><span class="kw">import</span> LatticeWallet
+
+<span class="cm">// Create a new wallet with a keystore path</span>
+<span class="kw">let</span> wallet = <span class="kw">try</span> <span class="type">Wallet</span>(
+    keystorePath: <span class="str">"~/.lattice/keystore"</span>,
+    gateway: <span class="str">"http://localhost:8545"</span>
+)
+
+<span class="cm">// Generate a new keypair</span>
+<span class="kw">let</span> key = <span class="kw">try</span> wallet.<span class="fn">createKey</span>(passphrase: <span class="str">"my-secure-passphrase"</span>)
+print(key.address) <span class="cm">// lat1q2w3e4r5t6y7u8...</span></code></pre>
+
+        <h3>Check balances</h3>
+        <pre><code><span class="cm">// Balance on a specific chain</span>
+<span class="kw">let</span> balance = <span class="kw">try await</span> wallet.<span class="fn">balance</span>(
+    address: key.address,
+    chain: <span class="str">"payments"</span>
+)
+print(balance) <span class="cm">// 1,250.00</span>
+
+<span class="cm">// Balances across all chains</span>
+<span class="kw">let</span> allBalances = <span class="kw">try await</span> wallet.<span class="fn">allBalances</span>(address: key.address)
+<span class="kw">for</span> (chain, amount) <span class="kw">in</span> allBalances {
+    print(<span class="str">"</span>\(chain): \(amount)<span class="str">"</span>)
+}</code></pre>
+
+        <h3>Send a transaction</h3>
+        <pre><code><span class="cm">// Single-chain transfer</span>
+<span class="kw">let</span> tx = <span class="kw">try await</span> wallet.<span class="fn">send</span>(
+    from: key,
+    to: <span class="str">"lat1a2b3c4d5e6f7g8..."</span>,
+    amount: <span class="val">100</span>,
+    chain: <span class="str">"payments"</span>,
+    passphrase: <span class="str">"my-secure-passphrase"</span>
+)
+print(tx.hash) <span class="cm">// 0xabc123...</span>
+
+<span class="cm">// Wait for confirmation</span>
+<span class="kw">let</span> receipt = <span class="kw">try await</span> tx.<span class="fn">confirmed</span>()
+print(receipt.blockHeight) <span class="cm">// 184,294</span></code></pre>
+
+        <h3>Cross-chain transfer</h3>
+        <pre><code><span class="cm">// Transfer from payments chain to identity chain</span>
+<span class="kw">let</span> transfer = <span class="kw">try await</span> wallet.<span class="fn">crossChainTransfer</span>(
+    from: key,
+    toAddress: <span class="str">"lat1a2b3c4d5e6f7g8..."</span>,
+    amount: <span class="val">50</span>,
+    sourceChain: <span class="str">"payments"</span>,
+    destinationChain: <span class="str">"identity"</span>,
+    passphrase: <span class="str">"my-secure-passphrase"</span>
+)
+
+<span class="cm">// The library handles deposit, proof generation, and withdrawal</span>
+print(transfer.depositHash)    <span class="cm">// 0xabc...</span>
+print(transfer.proofSize)      <span class="cm">// 96 bytes</span>
+print(transfer.withdrawalHash) <span class="cm">// 0xdef...</span></code></pre>
+
+        <h2>Key Management</h2>
+
+        <h3>Import and export</h3>
+        <pre><code><span class="cm">// Import a raw private key</span>
+<span class="kw">let</span> imported = <span class="kw">try</span> wallet.<span class="fn">importKey</span>(
+    privateKey: rawKeyBytes,
+    passphrase: <span class="str">"passphrase"</span>
+)
+
+<span class="cm">// Export encrypted keystore (JSON)</span>
+<span class="kw">let</span> json = <span class="kw">try</span> wallet.<span class="fn">exportKey</span>(
+    address: key.address,
+    passphrase: <span class="str">"passphrase"</span>
+)
+
+<span class="cm">// List all keys in the keystore</span>
+<span class="kw">let</span> keys = wallet.<span class="fn">listKeys</span>()
+<span class="kw">for</span> k <span class="kw">in</span> keys {
+    print(<span class="str">"</span>\(k.address) — created \(k.createdAt)<span class="str">"</span>)
+}</code></pre>
+
+        <h3>Keystore format</h3>
+        <p>
+            Keys are stored as JSON files encrypted with <strong>AES-256-GCM</strong>. The encryption key is derived from the passphrase using <strong>scrypt</strong> (N=2<sup>18</sup>, r=8, p=1). Each key file contains:
+        </p>
+        <ul>
+            <li><strong>address</strong> &mdash; The public address derived from the Ed25519 public key</li>
+            <li><strong>crypto</strong> &mdash; Encrypted private key, cipher params, and KDF params</li>
+            <li><strong>version</strong> &mdash; Keystore format version (currently <code>1</code>)</li>
+        </ul>
+
+        <h2>Architecture</h2>
+        <p>The wallet is structured as three layers:</p>
+        <ul>
+            <li><strong><code>LatticeWallet</code></strong> &mdash; High-level API: wallet creation, balance queries, transaction sending, cross-chain transfers</li>
+            <li><strong><code>LatticeSigner</code></strong> &mdash; Transaction building and Ed25519 signing. Stateless and testable in isolation.</li>
+            <li><strong><code>LatticeKeystore</code></strong> &mdash; Encrypted key storage. Reads and writes keystore JSON files. No network access.</li>
+        </ul>
+        <p>
+            Each layer can be used independently. If you only need signing, depend on <code>LatticeSigner</code>. If you want to manage keys without network access, use <code>LatticeKeystore</code>.
+        </p>
+
+        <h2>Security</h2>
+        <ul>
+            <li>Private keys never leave the keystore unencrypted</li>
+            <li>Signing happens in-memory; key material is zeroed after use</li>
+            <li>No private keys are transmitted over the network</li>
+            <li>The gateway connection is used only for reading state and submitting signed transactions</li>
+            <li>All cryptographic operations use Apple CryptoKit (Apple platforms) or swift-crypto (Linux)</li>
+        </ul>
+
+    </div>
+</section>
+
+<footer>
+    <div class="inner">
+        <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
+        <span><a href="index.html">Home</a> &middot; <a href="gateway.html">Gateway</a> &middot; <a href="cli.html">CLI</a> &middot; <a href="wallet.html">Wallet</a></span>
+    </div>
+</footer>
+
+</body>
+</html>
