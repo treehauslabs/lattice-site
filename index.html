@@ -640,8 +640,8 @@
                 <div class="num-unit">Hot-path storage<br>lookup latency</div>
             </div>
             <div>
-                <div class="num-val wh">0</div>
-                <div class="num-unit">Trusted intermediaries<br>for cross-chain</div>
+                <div class="num-val wh">&infin;</div>
+                <div class="num-unit">Storage spectrum<br>256MB to terabytes</div>
             </div>
         </div>
     </div>
@@ -705,9 +705,9 @@
         </div>
 
         <div class="section-tag">How It Works</div>
-        <h2>Three innovations, one protocol</h2>
+        <h2>Four innovations, one protocol</h2>
 
-        <div class="how-grid" style="margin-top: 36px;">
+        <div class="how-grid" style="margin-top: 36px; grid-template-columns: repeat(2, 1fr);">
             <div class="how-card fi">
                 <div class="icon">&#9670;</div>
                 <h3>Nested Merged Mining</h3>
@@ -726,6 +726,12 @@
                 <div class="punchline">If the hash matches, it's correct.</div>
                 <p>Every block, transaction, and state tree node is addressed by its SHA-256 hash. Nodes fetch only the data they need. Light clients verify Merkle proofs without full state. Deduplication is automatic and free.</p>
             </div>
+            <div class="how-card fi d3">
+                <div class="icon">&#9670;</div>
+                <h3>Adaptive Storage</h3>
+                <div class="punchline">Contribute what you can.</div>
+                <p>Nodes choose how much memory and disk to commit &mdash; from 256MB to terabytes. XOR distance determines what each node stores: content closest to your identity stays, distant content is evicted first. The network self-organizes data redundancy without coordination.</p>
+            </div>
         </div>
     </div>
 </section>
@@ -734,10 +740,17 @@
 <section class="section" id="stack">
     <div class="container">
         <div class="section-tag">The Stack</div>
-        <h2>Seven packages. Every layer standalone.</h2>
+        <h2>Eight packages. Every layer standalone.</h2>
         <p class="section-sub">Built in Swift 6 with strict concurrency, actor isolation, and zero unsafe code. Use the full stack or pick the layer you need.</p>
 
         <div class="stack-layers">
+            <div class="stack-layer fi">
+                <div class="stack-lbl l4">Node</div>
+                <div class="stack-chips">
+                    <a href="https://github.com/treehauslabs/lattice-node" class="chip l4">LatticeNode</a>
+                    <span class="stack-note">Multi-chain miner &middot; Merged mining &middot; Adaptive storage &middot; Docker &middot; Autosize</span>
+                </div>
+            </div>
             <div class="stack-layer fi">
                 <div class="stack-lbl l4">Blockchain</div>
                 <div class="stack-chips">
@@ -844,18 +857,18 @@
 <!-- CTA -->
 <section class="cta">
     <div class="container">
-        <div class="section-tag">Open Source</div>
-        <h2>Built in Swift. Ready to fork.</h2>
+        <div class="section-tag">Run a Node</div>
+        <h2>One command. You're on the network.</h2>
         <p class="section-sub">
-            Swift 6 strict concurrency. Actor isolation. Cross-platform: macOS, iOS, tvOS, watchOS, visionOS, Linux.
-            Every package has benchmarks and tests. MIT licensed.
+            Deploy with Docker, bare metal, or Terraform. Auto-detects your system resources.
+            Choose how much storage to contribute &mdash; the network adapts. MIT licensed.
         </p>
         <div class="cta-btns">
-            <a href="https://github.com/treehauslabs/lattice" class="btn btn-primary">
+            <a href="https://github.com/treehauslabs/lattice-node" class="btn btn-primary">
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-                View on GitHub
+                Run a Node
             </a>
-            <a href="https://github.com/treehauslabs/lattice#readme" class="btn btn-ghost">Read the docs</a>
+            <a href="https://github.com/treehauslabs/lattice" class="btn btn-ghost">View Protocol</a>
         </div>
     </div>
 </section>
@@ -877,7 +890,7 @@
                     </svg>
                     Lattice
                 </a>
-                <p>Hierarchical blockchains built in Swift. Scalable throughput, trustless cross-chain, content-addressed everything.</p>
+                <p>Hierarchical blockchains built in Swift. Merged mining, trustless cross-chain, adaptive storage. Contribute what you can.</p>
             </div>
             <div class="footer-links">
                 <div class="footer-col">
@@ -893,6 +906,7 @@
                 </div>
                 <div class="footer-col">
                     <h4>Tools</h4>
+                    <a href="https://github.com/treehauslabs/lattice-node">Node</a>
                     <a href="gateway.html">Gateway</a>
                     <a href="https://github.com/treehauslabs/lattice-explorer">Explorer</a>
                     <a href="cli.html">CLI</a>
@@ -907,7 +921,7 @@
         </div>
         <div class="footer-bottom">
             <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
-            <span>Swift 6 &middot; macOS &middot; iOS &middot; Linux</span>
+            <span>Swift 6 &middot; macOS &middot; Linux &middot; Docker</span>
         </div>
     </div>
 </footer>
