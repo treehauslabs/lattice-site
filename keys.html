@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Key Management — Lattice</title>
+    <meta name="description" content="Generate, backup, and restore P-256 ECDSA key pairs for the Lattice network.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%2322d3ee'/><circle cx='6' cy='22' r='3' fill='%23a78bfa'/><circle cx='16' cy='22' r='3' fill='%23a78bfa'/><circle cx='26' cy='22' r='3' fill='%23a78bfa'/><line x1='16' y1='10' x2='6' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='16' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='26' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg-subtle: #0b0b14;
+            --bg-card: #0f0f1e;
+            --border: #1a1a33;
+            --text: #e8eaf0;
+            --text-dim: #7c829a;
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.15);
+            --purple: #a78bfa;
+            --purple-glow: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --amber: #fbbf24;
+            --red: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 0;
+            background: rgba(6, 6, 11, 0.8);
+            backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .inner { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+
+        .logo {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em;
+            color: var(--text); text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 28px; height: 28px; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a.active { color: var(--cyan); }
+
+        .nav-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--cyan-glow); border-color: var(--cyan); color: var(--cyan); }
+
+        .doc-header {
+            padding: 140px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-eyebrow {
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--amber); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .doc-eyebrow::before {
+            content: ''; width: 24px; height: 1px; background: var(--amber);
+        }
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            line-height: 1.12; margin-bottom: 16px;
+        }
+        .doc-sub {
+            font-size: 1.05rem; color: var(--text-dim);
+            max-width: 600px; line-height: 1.75;
+        }
+
+        .doc-content { padding: 64px 0 120px; }
+
+        h2 {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 16px;
+            padding-top: 32px; border-top: 1px solid var(--border);
+        }
+        h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+        h3 {
+            font-size: 1.1rem; font-weight: 700;
+            margin-top: 32px; margin-bottom: 10px;
+        }
+
+        p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.75; }
+        p strong { color: var(--text); font-weight: 600; }
+
+        ul, ol { color: var(--text-dim); margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; line-height: 1.65; }
+        li strong { color: var(--text); font-weight: 600; }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.88em; background: var(--bg-card);
+            padding: 2px 7px; border-radius: 5px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px 24px;
+            overflow-x: auto; margin-bottom: 24px;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            font-size: 0.85rem; line-height: 1.7;
+            color: var(--text-dim);
+        }
+        pre code .cm { color: #4a5568; }
+        pre code .val { color: var(--cyan); }
+        pre code .str { color: var(--green); }
+        pre code .flag { color: var(--purple); }
+        pre code .cmd { color: var(--text); font-weight: 600; }
+
+        .warn-box {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            background: rgba(239, 68, 68, 0.04);
+            margin-bottom: 24px;
+        }
+        .warn-box p { color: var(--text-dim); margin-bottom: 0; font-size: 0.9rem; }
+        .warn-box strong { color: var(--red); }
+
+        .info-box {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid rgba(34, 211, 238, 0.15);
+            background: rgba(34, 211, 238, 0.04);
+            margin-bottom: 24px;
+        }
+        .info-box p { color: var(--text-dim); margin-bottom: 0; font-size: 0.9rem; }
+        .info-box strong { color: var(--cyan); }
+
+        .tip-box {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            background: rgba(251, 191, 36, 0.04);
+            margin-bottom: 24px;
+        }
+        .tip-box p { color: var(--text-dim); margin-bottom: 0; font-size: 0.9rem; }
+        .tip-box strong { color: var(--amber); }
+
+        .concept {
+            padding: 20px 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+            margin-bottom: 12px;
+        }
+        .concept-title {
+            font-size: 0.9rem; font-weight: 700;
+            color: var(--text); margin-bottom: 6px;
+        }
+        .concept-desc {
+            font-size: 0.84rem; color: var(--text-dim); line-height: 1.65;
+        }
+
+        footer {
+            padding: 40px 0; border-top: 1px solid var(--border);
+        }
+        footer .inner {
+            max-width: 1120px; margin: 0 auto; padding: 0 28px;
+            display: flex; justify-content: space-between;
+            font-size: 0.78rem; color: var(--text-dim);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="5" r="3.5" fill="#22d3ee"/>
+                <circle cx="5" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="14" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="23" cy="20" r="2.5" fill="#a78bfa"/>
+                <line x1="14" y1="8.5" x2="5" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="14" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="23" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+            Lattice
+        </a>
+        <ul class="nav-links">
+            <li><a href="getting-started.html">Get Started</a></li>
+            <li><a href="api.html">API</a></li>
+            <li><a href="keys.html" class="active">Keys</a></li>
+            <li><a href="gateway.html">Gateway</a></li>
+            <li><a href="cli.html">CLI</a></li>
+            <li><a href="wallet.html">Wallet</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs/lattice-node" class="nav-cta">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<section class="doc-header">
+    <div class="container">
+        <div class="doc-eyebrow">Guide</div>
+        <h1>Key Management</h1>
+        <p class="doc-sub">Generate, backup, and restore P-256 ECDSA key pairs. Your private key controls your address and funds.</p>
+    </div>
+</section>
+
+<section class="doc-content">
+    <div class="container">
+
+        <h2 id="concepts">Concepts</h2>
+
+        <div class="concept">
+            <div class="concept-title">Private Key</div>
+            <div class="concept-desc">A 32-byte P-256 (secp256r1) ECDSA private key. This is the secret that signs transactions and proves ownership. Never share it.</div>
+        </div>
+
+        <div class="concept">
+            <div class="concept-title">Public Key</div>
+            <div class="concept-desc">Derived from the private key. Used to verify signatures. Shared freely &mdash; it's included in transactions so validators can check signatures.</div>
+        </div>
+
+        <div class="concept">
+            <div class="concept-title">Address</div>
+            <div class="concept-desc">The CID (content identifier) of the public key. This is your on-chain identity &mdash; balances are stored at <code>account:&lt;address&gt;</code> in the state trie.</div>
+        </div>
+
+        <div class="info-box">
+            <p><strong>Why P-256?</strong> P-256 (also called secp256r1 or prime256v1) has hardware acceleration on Apple Silicon, Intel, and ARM chips via Secure Enclave / hardware security modules. This means signing and verification are fast and can be hardware-backed.</p>
+        </div>
+
+        <h2 id="generate">Generate a key pair</h2>
+
+        <h3>Using the CLI</h3>
+<pre><code><span class="cmd">lattice-node</span> keys generate <span class="flag">--output</span> <span class="str">~/.lattice/miner.key</span></code></pre>
+
+        <p>This generates a new P-256 private key and writes it to the specified file. The output also shows your public key and address:</p>
+
+<pre><code><span class="cm">Private key written to: ~/.lattice/miner.key</span>
+<span class="cm">Public key:  04a1b2c3d4e5f6...  (hex, uncompressed)</span>
+<span class="cm">Address:     baguqeera...abc</span></code></pre>
+
+        <h3>Show key info</h3>
+<pre><code><span class="cmd">lattice-node</span> keys info <span class="flag">--key</span> <span class="str">~/.lattice/miner.key</span></code></pre>
+
+        <p>Displays the public key and address for an existing private key file without exposing the private key itself.</p>
+
+        <h3>Multiple keys</h3>
+        <p>You can generate as many key pairs as you want. Common patterns:</p>
+        <ul>
+            <li><strong>Miner key</strong> &mdash; receives block rewards. Keep on the mining machine.</li>
+            <li><strong>Hot wallet key</strong> &mdash; for day-to-day transactions. Small balance.</li>
+            <li><strong>Cold storage key</strong> &mdash; for long-term holdings. Generated offline, backed up securely.</li>
+        </ul>
+
+        <h2 id="backup">Backup</h2>
+
+        <div class="warn-box">
+            <p><strong>If you lose your private key, your funds are gone forever.</strong> There is no recovery mechanism, no support team, no reset. Back up your keys before mining or receiving funds.</p>
+        </div>
+
+        <h3>File backup</h3>
+        <p>The key file is a single file containing your P-256 private key. Copy it to secure storage:</p>
+
+<pre><code><span class="cm"># Copy to encrypted USB drive</span>
+<span class="cmd">cp</span> ~/.lattice/miner.key /Volumes/SECURE/lattice-keys/miner.key
+
+<span class="cm"># Verify the copy</span>
+<span class="cmd">shasum</span> <span class="flag">-a 256</span> ~/.lattice/miner.key /Volumes/SECURE/lattice-keys/miner.key</code></pre>
+
+        <h3>Hex export</h3>
+        <p>Export the raw private key as hex for paper backup or hardware wallet import:</p>
+
+<pre><code><span class="cmd">lattice-node</span> keys export <span class="flag">--key</span> <span class="str">~/.lattice/miner.key</span> <span class="flag">--format</span> <span class="str">hex</span></code></pre>
+
+<pre><code><span class="cm">Private key (hex): 3a7f2b...</span>
+<span class="cm">Write this down and store securely. Do not photograph or screenshot.</span></code></pre>
+
+        <div class="tip-box">
+            <p><strong>Backup checklist:</strong> Store backups in at least two physically separate locations. Test restoration from your backup before relying on it. Encrypted storage is strongly recommended.</p>
+        </div>
+
+        <h3>What to back up</h3>
+        <ul>
+            <li><strong>Private key file</strong> &mdash; the <code>.key</code> file is all you need. Everything else (public key, address) is derived from it.</li>
+            <li><strong>Not needed</strong> &mdash; chain data, node config, peer lists. These can be re-synced.</li>
+        </ul>
+
+        <h2 id="restore">Restore</h2>
+
+        <h3>From file</h3>
+        <p>Copy the backed-up key file to your node's data directory:</p>
+
+<pre><code><span class="cmd">cp</span> /Volumes/SECURE/lattice-keys/miner.key ~/.lattice/miner.key
+
+<span class="cm"># Verify it works</span>
+<span class="cmd">lattice-node</span> keys info <span class="flag">--key</span> <span class="str">~/.lattice/miner.key</span></code></pre>
+
+        <h3>From hex</h3>
+        <p>Import a hex-encoded private key back into a key file:</p>
+
+<pre><code><span class="cmd">lattice-node</span> keys import <span class="flag">--hex</span> <span class="str">"3a7f2b..."</span> <span class="flag">--output</span> <span class="str">~/.lattice/restored.key</span></code></pre>
+
+        <h3>Verify restoration</h3>
+        <p>After restoring, confirm the address matches your original:</p>
+
+<pre><code><span class="cmd">lattice-node</span> keys info <span class="flag">--key</span> <span class="str">~/.lattice/restored.key</span>
+<span class="cm"># Address: baguqeera...abc  ← should match your original</span>
+
+<span class="cm"># Check on-chain balance</span>
+<span class="cmd">curl</span> http://localhost:8545/api/balance/baguqeera...abc</code></pre>
+
+        <h2 id="security">Security best practices</h2>
+
+        <ul>
+            <li><strong>File permissions</strong> &mdash; restrict key files to owner-only: <code>chmod 600 ~/.lattice/*.key</code></li>
+            <li><strong>Separate keys</strong> &mdash; don't use the same key for mining and cold storage</li>
+            <li><strong>Offline generation</strong> &mdash; for high-value keys, generate on an air-gapped machine</li>
+            <li><strong>Hardware backing</strong> &mdash; on macOS, P-256 keys can be backed by Secure Enclave for signing without key extraction</li>
+            <li><strong>Rotation</strong> &mdash; periodically move funds to fresh keys, especially if a machine was compromised</li>
+        </ul>
+
+        <h2 id="signing">How signing works</h2>
+
+        <p>When you send a transaction, the node:</p>
+        <ol>
+            <li>Constructs a <code>TransactionBody</code> with your account actions, fee, and nonce</li>
+            <li>Stores the body in CAS, producing a <code>bodyCID</code></li>
+            <li>Signs <code>bodyCID</code> with your P-256 private key (ECDSA)</li>
+            <li>Wraps signature + body reference into a <code>Transaction</code></li>
+            <li>Broadcasts to the network</li>
+        </ol>
+
+        <p>Validators verify the signature against the public key, then check that the public key's CID matches the signer address in the transaction. This proves you control the address without revealing the private key.</p>
+
+        <h2 id="next">Next steps</h2>
+
+        <ul>
+            <li><a href="getting-started.html" style="color: var(--cyan);"><strong>Getting Started</strong></a> &mdash; run a node and start mining</li>
+            <li><a href="api.html" style="color: var(--cyan);"><strong>RPC API</strong></a> &mdash; query balances and submit transactions</li>
+            <li><a href="wallet.html" style="color: var(--cyan);"><strong>Wallet</strong></a> &mdash; Swift wallet library for programmatic key management</li>
+        </ul>
+
+    </div>
+</section>
+
+<footer>
+    <div class="inner">
+        <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
+        <span>Swift 6 &middot; macOS &middot; Linux &middot; Docker</span>
+    </div>
+</footer>
+
+</body>
+</html>

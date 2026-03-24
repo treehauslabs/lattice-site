@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPC API Reference — Lattice</title>
+    <meta name="description" content="HTTP RPC API reference for Lattice nodes. Query chain state, submit transactions, estimate fees, and more.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%2322d3ee'/><circle cx='6' cy='22' r='3' fill='%23a78bfa'/><circle cx='16' cy='22' r='3' fill='%23a78bfa'/><circle cx='26' cy='22' r='3' fill='%23a78bfa'/><line x1='16' y1='10' x2='6' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='16' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='26' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg-subtle: #0b0b14;
+            --bg-card: #0f0f1e;
+            --border: #1a1a33;
+            --text: #e8eaf0;
+            --text-dim: #7c829a;
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.15);
+            --purple: #a78bfa;
+            --purple-glow: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --amber: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 0;
+            background: rgba(6, 6, 11, 0.8);
+            backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .inner { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+
+        .logo {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em;
+            color: var(--text); text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 28px; height: 28px; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a.active { color: var(--cyan); }
+
+        .nav-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--cyan-glow); border-color: var(--cyan); color: var(--cyan); }
+
+        .doc-header {
+            padding: 140px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-eyebrow {
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--cyan); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .doc-eyebrow::before {
+            content: ''; width: 24px; height: 1px; background: var(--cyan);
+        }
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            line-height: 1.12; margin-bottom: 16px;
+        }
+        .doc-sub {
+            font-size: 1.05rem; color: var(--text-dim);
+            max-width: 600px; line-height: 1.75;
+        }
+
+        .doc-content { padding: 64px 0 120px; }
+
+        h2 {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 16px;
+            padding-top: 32px; border-top: 1px solid var(--border);
+        }
+        h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+        h3 {
+            font-size: 1.1rem; font-weight: 700;
+            margin-top: 32px; margin-bottom: 10px;
+        }
+
+        p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.75; }
+        p strong { color: var(--text); font-weight: 600; }
+
+        ul, ol { color: var(--text-dim); margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; line-height: 1.65; }
+        li strong { color: var(--text); font-weight: 600; }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.88em; background: var(--bg-card);
+            padding: 2px 7px; border-radius: 5px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px 24px;
+            overflow-x: auto; margin-bottom: 24px;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            font-size: 0.85rem; line-height: 1.7;
+            color: var(--text-dim);
+        }
+        pre code .cm { color: #4a5568; }
+        pre code .val { color: var(--cyan); }
+        pre code .str { color: var(--green); }
+        pre code .flag { color: var(--purple); }
+        pre code .cmd { color: var(--text); font-weight: 600; }
+
+        .endpoint {
+            padding: 20px 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+            margin-bottom: 12px;
+        }
+        .endpoint-header {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 8px;
+        }
+        .method {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.72rem; font-weight: 700;
+            padding: 3px 8px; border-radius: 5px;
+            letter-spacing: 0.04em;
+        }
+        .method.get {
+            background: var(--green-glow); color: var(--green);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+        }
+        .method.post {
+            background: var(--purple-glow); color: var(--purple);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+        }
+        .endpoint-path {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.9rem; font-weight: 600; color: var(--text);
+        }
+        .endpoint-desc {
+            font-size: 0.84rem; color: var(--text-dim); line-height: 1.6;
+        }
+
+        .toc {
+            padding: 24px; border: 1px solid var(--border);
+            border-radius: 12px; background: var(--bg-card);
+            margin-bottom: 48px;
+        }
+        .toc-title {
+            font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--text-dim); margin-bottom: 12px;
+        }
+        .toc a {
+            display: block; color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; padding: 4px 0; transition: color 0.2s;
+        }
+        .toc a:hover { color: var(--cyan); }
+
+        .info-box {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid rgba(34, 211, 238, 0.15);
+            background: rgba(34, 211, 238, 0.04);
+            margin-bottom: 24px;
+        }
+        .info-box p { color: var(--text-dim); margin-bottom: 0; font-size: 0.9rem; }
+        .info-box strong { color: var(--cyan); }
+
+        footer {
+            padding: 40px 0; border-top: 1px solid var(--border);
+        }
+        footer .inner {
+            max-width: 1120px; margin: 0 auto; padding: 0 28px;
+            display: flex; justify-content: space-between;
+            font-size: 0.78rem; color: var(--text-dim);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .nav-links { display: none; }
+            .endpoint-header { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="5" r="3.5" fill="#22d3ee"/>
+                <circle cx="5" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="14" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="23" cy="20" r="2.5" fill="#a78bfa"/>
+                <line x1="14" y1="8.5" x2="5" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="14" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="23" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+            Lattice
+        </a>
+        <ul class="nav-links">
+            <li><a href="getting-started.html">Get Started</a></li>
+            <li><a href="api.html" class="active">API</a></li>
+            <li><a href="keys.html">Keys</a></li>
+            <li><a href="gateway.html">Gateway</a></li>
+            <li><a href="cli.html">CLI</a></li>
+            <li><a href="wallet.html">Wallet</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs/lattice-node" class="nav-cta">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<section class="doc-header">
+    <div class="container">
+        <div class="doc-eyebrow">Reference</div>
+        <h1>RPC API</h1>
+        <p class="doc-sub">HTTP API exposed by every Lattice node. All endpoints return JSON. Default port is <code>8545</code>.</p>
+    </div>
+</section>
+
+<section class="doc-content">
+    <div class="container">
+
+        <div class="toc">
+            <div class="toc-title">Sections</div>
+            <a href="#auth">Authentication</a>
+            <a href="#chain">Chain</a>
+            <a href="#accounts">Accounts</a>
+            <a href="#blocks">Blocks</a>
+            <a href="#transactions">Transactions</a>
+            <a href="#fees">Fee Market</a>
+            <a href="#dex">DEX (Batch Auction)</a>
+            <a href="#light">Light Client</a>
+            <a href="#network">Network</a>
+            <a href="#observability">Observability</a>
+        </div>
+
+        <h2 id="auth">Authentication</h2>
+
+        <p>When the node is started with <code>--rpc-auth</code>, a random 32-byte hex token is written to <code>&lt;dataDir&gt;/.cookie</code>. All requests must include the token:</p>
+
+<pre><code><span class="cmd">curl</span> <span class="flag">-H</span> <span class="str">"Authorization: Bearer $(cat ~/.lattice/.cookie)"</span> \
+  http://localhost:8545/api/chain/info</code></pre>
+
+        <p>Without <code>--rpc-auth</code>, all endpoints are open. Use auth in production or when the RPC port is exposed.</p>
+
+        <!-- ── CHAIN ── -->
+
+        <h2 id="chain">Chain</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/chain/info</span>
+            </div>
+            <div class="endpoint-desc">Chain status: current height, tip block CID, sync state, mining state, mempool size, and peer count.</div>
+        </div>
+
+<pre><code><span class="cmd">curl</span> http://localhost:8545/api/chain/info</code></pre>
+<pre><code>{
+  <span class="str">"height"</span>: <span class="val">142857</span>,
+  <span class="str">"tip"</span>: <span class="str">"baguqeera..."</span>,
+  <span class="str">"syncing"</span>: <span class="val">false</span>,
+  <span class="str">"mining"</span>: <span class="val">true</span>,
+  <span class="str">"mempool"</span>: <span class="val">23</span>,
+  <span class="str">"peers"</span>: <span class="val">8</span>
+}</code></pre>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/chain/spec</span>
+            </div>
+            <div class="endpoint-desc">Chain specification parameters: block time target, reward schedule, capacity limits, difficulty window.</div>
+        </div>
+
+        <!-- ── ACCOUNTS ── -->
+
+        <h2 id="accounts">Accounts</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/balance/{address}</span>
+            </div>
+            <div class="endpoint-desc">Current balance for the given address.</div>
+        </div>
+
+<pre><code><span class="cmd">curl</span> http://localhost:8545/api/balance/baguqeera...abc</code></pre>
+<pre><code>{
+  <span class="str">"address"</span>: <span class="str">"baguqeera...abc"</span>,
+  <span class="str">"balance"</span>: <span class="val">5242880</span>
+}</code></pre>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/nonce/{address}</span>
+            </div>
+            <div class="endpoint-desc">Current nonce for the given address. Used for transaction construction.</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/proof/{address}</span>
+            </div>
+            <div class="endpoint-desc">Merkle proof of the account's balance against the current state root. Verifiable by light clients without full state.</div>
+        </div>
+
+        <!-- ── BLOCKS ── -->
+
+        <h2 id="blocks">Blocks</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/block/latest</span>
+            </div>
+            <div class="endpoint-desc">Latest block info: height, hash, timestamp, transaction count, difficulty.</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/block/{id}</span>
+            </div>
+            <div class="endpoint-desc">Block by CID hash or height number. Returns full block data including transactions and child blocks.</div>
+        </div>
+
+<pre><code><span class="cm"># By height</span>
+<span class="cmd">curl</span> http://localhost:8545/api/block/42
+
+<span class="cm"># By CID</span>
+<span class="cmd">curl</span> http://localhost:8545/api/block/baguqeera...xyz</code></pre>
+
+        <!-- ── TRANSACTIONS ── -->
+
+        <h2 id="transactions">Transactions</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/transaction</span>
+            </div>
+            <div class="endpoint-desc">Submit a signed transaction. The transaction is validated and added to the mempool if valid. Returns the transaction CID.</div>
+        </div>
+
+<pre><code><span class="cmd">curl</span> <span class="flag">-X POST</span> http://localhost:8545/api/transaction \
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="str">'{
+    "signatures": {"&lt;pubkey&gt;": "&lt;signature&gt;"},
+    "body": "&lt;bodyCID&gt;"
+  }'</span></code></pre>
+
+        <p>Transaction validation rules:</p>
+        <ul>
+            <li><strong>Signatures</strong> &mdash; every signer address must have a valid P256 ECDSA signature over <code>body.rawCID</code></li>
+            <li><strong>Fee</strong> &mdash; between 1 and 1,000,000,000,000</li>
+            <li><strong>Nonce</strong> &mdash; within &plusmn;600 blocks of current height (replay protection)</li>
+            <li><strong>Size</strong> &mdash; serialized body &le; 102,400 bytes</li>
+            <li><strong>Balance</strong> &mdash; each <code>oldBalance</code> must match on-chain state</li>
+            <li><strong>Conservation</strong> &mdash; <code>sum(debits) == sum(credits) + fee</code></li>
+        </ul>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/receipt/{txCID}</span>
+            </div>
+            <div class="endpoint-desc">Transaction receipt: block hash, height, timestamp, fee, sender, and balance changes. Recent receipts return instantly; older ones are reconstructed from CAS.</div>
+        </div>
+
+<pre><code>{
+  <span class="str">"txCID"</span>: <span class="str">"baguqeera...tx"</span>,
+  <span class="str">"blockHash"</span>: <span class="str">"baguqeera...blk"</span>,
+  <span class="str">"blockHeight"</span>: <span class="val">142850</span>,
+  <span class="str">"timestamp"</span>: <span class="val">1742601600000</span>,
+  <span class="str">"fee"</span>: <span class="val">100</span>,
+  <span class="str">"sender"</span>: <span class="str">"baguqeera...abc"</span>,
+  <span class="str">"accountActions"</span>: [
+    {<span class="str">"owner"</span>: <span class="str">"baguqeera...abc"</span>, <span class="str">"oldBalance"</span>: <span class="val">5242880</span>, <span class="str">"newBalance"</span>: <span class="val">4194204</span>},
+    {<span class="str">"owner"</span>: <span class="str">"baguqeera...def"</span>, <span class="str">"oldBalance"</span>: <span class="val">0</span>, <span class="str">"newBalance"</span>: <span class="val">1048576</span>}
+  ]
+}</code></pre>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/mempool</span>
+            </div>
+            <div class="endpoint-desc">Mempool statistics: pending count, total fees, per-account counts. Max 10,000 transactions; max 64 per account.</div>
+        </div>
+
+        <!-- ── FEE MARKET ── -->
+
+        <h2 id="fees">Fee Market</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/fee/estimate?target=N</span>
+            </div>
+            <div class="endpoint-desc">Estimated fee for confirmation within <code>N</code> blocks. Higher target = lower fee.</div>
+        </div>
+
+<pre><code><span class="cmd">curl</span> http://localhost:8545/api/fee/estimate?target=3</code></pre>
+<pre><code>{
+  <span class="str">"target"</span>: <span class="val">3</span>,
+  <span class="str">"estimatedFee"</span>: <span class="val">150</span>
+}</code></pre>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/fee/histogram</span>
+            </div>
+            <div class="endpoint-desc">Fee distribution histogram of current mempool transactions. Useful for fee market visualization.</div>
+        </div>
+
+        <!-- ── DEX ── -->
+
+        <h2 id="dex">DEX (Batch Auction)</h2>
+
+        <p>The built-in DEX uses a commit-reveal batch auction to prevent front-running. Orders go through three phases: commit (hash only), reveal (after window), settle (at midpoint price).</p>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/orders</span>
+            </div>
+            <div class="endpoint-desc">List active orders in the current auction window.</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/orders</span>
+            </div>
+            <div class="endpoint-desc">Place a new order directly (no commit-reveal). Suitable for non-MEV-sensitive trades.</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/orders/commit</span>
+            </div>
+            <div class="endpoint-desc">Commit an order hash for MEV protection. The actual order is hidden until the reveal phase (3-block auction window).</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/orders/reveal</span>
+            </div>
+            <div class="endpoint-desc">Reveal a previously committed order. Must match the committed hash. Orders are settled at midpoint prices after the auction window.</div>
+        </div>
+
+        <!-- ── LIGHT CLIENT ── -->
+
+        <h2 id="light">Light Client</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/light/headers?from=X&amp;to=Y</span>
+            </div>
+            <div class="endpoint-desc">Block headers for the given height range. Light clients use this for header-chain sync without downloading full blocks.</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/light/proof/{address}</span>
+            </div>
+            <div class="endpoint-desc">Account proof with chain context: balance proof plus block header at proof height. Sufficient for independent verification.</div>
+        </div>
+
+        <!-- ── NETWORK ── -->
+
+        <h2 id="network">Network</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/peers</span>
+            </div>
+            <div class="endpoint-desc">Connected peer list with connection info, reputation scores, and subnet distribution.</div>
+        </div>
+
+        <!-- ── OBSERVABILITY ── -->
+
+        <h2 id="observability">Observability</h2>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/metrics</span>
+            </div>
+            <div class="endpoint-desc">Prometheus-format metrics. Scrape with any Prometheus-compatible collector.</div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-header">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/ws</span>
+            </div>
+            <div class="endpoint-desc">WebSocket endpoint for real-time block and transaction event subscriptions. <em>Planned &mdash; not yet implemented.</em></div>
+        </div>
+
+    </div>
+</section>
+
+<footer>
+    <div class="inner">
+        <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
+        <span>Swift 6 &middot; macOS &middot; Linux &middot; Docker</span>
+    </div>
+</footer>
+
+</body>
+</html>

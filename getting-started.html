@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started — Lattice</title>
+    <meta name="description" content="Install, run, and mine on the Lattice network. Get a node running in minutes.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='6' r='4' fill='%2322d3ee'/><circle cx='6' cy='22' r='3' fill='%23a78bfa'/><circle cx='16' cy='22' r='3' fill='%23a78bfa'/><circle cx='26' cy='22' r='3' fill='%23a78bfa'/><line x1='16' y1='10' x2='6' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='16' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/><line x1='16' y1='10' x2='26' y2='19' stroke='%2322d3ee' stroke-width='1.5' opacity='0.5'/></svg>">
+    <style>
+        :root {
+            --bg: #06060b;
+            --bg-subtle: #0b0b14;
+            --bg-card: #0f0f1e;
+            --border: #1a1a33;
+            --text: #e8eaf0;
+            --text-dim: #7c829a;
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.15);
+            --purple: #a78bfa;
+            --purple-glow: rgba(167, 139, 250, 0.12);
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --amber: #fbbf24;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 800px; margin: 0 auto; padding: 0 28px; }
+
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 14px 0;
+            background: rgba(6, 6, 11, 0.8);
+            backdrop-filter: blur(24px) saturate(1.2);
+            border-bottom: 1px solid var(--border);
+        }
+        nav .inner { max-width: 1120px; margin: 0 auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; }
+
+        .logo {
+            font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em;
+            color: var(--text); text-decoration: none;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .logo-icon { width: 28px; height: 28px; }
+
+        .nav-links { display: flex; gap: 28px; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-links a.active { color: var(--cyan); }
+
+        .nav-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 7px 16px; border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); text-decoration: none;
+            font-size: 0.85rem; font-weight: 500; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--cyan-glow); border-color: var(--cyan); color: var(--cyan); }
+
+        .doc-header {
+            padding: 140px 0 60px;
+            border-bottom: 1px solid var(--border);
+        }
+        .doc-eyebrow {
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--green); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .doc-eyebrow::before {
+            content: ''; width: 24px; height: 1px; background: var(--green);
+        }
+        h1 {
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 800; letter-spacing: -0.04em;
+            line-height: 1.12; margin-bottom: 16px;
+        }
+        .doc-sub {
+            font-size: 1.05rem; color: var(--text-dim);
+            max-width: 600px; line-height: 1.75;
+        }
+
+        .doc-content { padding: 64px 0 120px; }
+
+        h2 {
+            font-size: 1.5rem; font-weight: 800;
+            letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 16px;
+            padding-top: 32px; border-top: 1px solid var(--border);
+        }
+        h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+        h3 {
+            font-size: 1.1rem; font-weight: 700;
+            margin-top: 32px; margin-bottom: 10px;
+        }
+
+        p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.75; }
+        p strong { color: var(--text); font-weight: 600; }
+
+        ul, ol { color: var(--text-dim); margin-bottom: 16px; padding-left: 24px; }
+        li { margin-bottom: 8px; line-height: 1.65; }
+        li strong { color: var(--text); font-weight: 600; }
+
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.88em; background: var(--bg-card);
+            padding: 2px 7px; border-radius: 5px;
+            border: 1px solid var(--border);
+        }
+
+        pre {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; padding: 20px 24px;
+            overflow-x: auto; margin-bottom: 24px;
+        }
+        pre code {
+            background: none; border: none; padding: 0;
+            font-size: 0.85rem; line-height: 1.7;
+            color: var(--text-dim);
+        }
+        pre code .cm { color: #4a5568; }
+        pre code .val { color: var(--cyan); }
+        pre code .str { color: var(--green); }
+        pre code .flag { color: var(--purple); }
+        pre code .cmd { color: var(--text); font-weight: 600; }
+
+        .step-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 8px;
+            background: var(--cyan-glow); color: var(--cyan);
+            font-size: 0.8rem; font-weight: 700; margin-right: 10px;
+            border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        .info-box {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid rgba(34, 211, 238, 0.15);
+            background: rgba(34, 211, 238, 0.04);
+            margin-bottom: 24px;
+        }
+        .info-box p { color: var(--text-dim); margin-bottom: 0; font-size: 0.9rem; }
+        .info-box strong { color: var(--cyan); }
+
+        .warn-box {
+            padding: 16px 20px; border-radius: 10px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            background: rgba(251, 191, 36, 0.04);
+            margin-bottom: 24px;
+        }
+        .warn-box p { color: var(--text-dim); margin-bottom: 0; font-size: 0.9rem; }
+        .warn-box strong { color: var(--amber); }
+
+        footer {
+            padding: 40px 0; border-top: 1px solid var(--border);
+        }
+        footer .inner {
+            max-width: 1120px; margin: 0 auto; padding: 0 28px;
+            display: flex; justify-content: space-between;
+            font-size: 0.78rem; color: var(--text-dim);
+        }
+        footer a { color: var(--cyan); text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="index.html" class="logo">
+            <svg class="logo-icon" viewBox="0 0 28 28" fill="none">
+                <circle cx="14" cy="5" r="3.5" fill="#22d3ee"/>
+                <circle cx="5" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="14" cy="20" r="2.5" fill="#a78bfa"/>
+                <circle cx="23" cy="20" r="2.5" fill="#a78bfa"/>
+                <line x1="14" y1="8.5" x2="5" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="14" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+                <line x1="14" y1="8.5" x2="23" y2="17.5" stroke="#22d3ee" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+            Lattice
+        </a>
+        <ul class="nav-links">
+            <li><a href="getting-started.html" class="active">Get Started</a></li>
+            <li><a href="api.html">API</a></li>
+            <li><a href="keys.html">Keys</a></li>
+            <li><a href="gateway.html">Gateway</a></li>
+            <li><a href="cli.html">CLI</a></li>
+            <li><a href="wallet.html">Wallet</a></li>
+        </ul>
+        <a href="https://github.com/treehauslabs/lattice-node" class="nav-cta">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<section class="doc-header">
+    <div class="container">
+        <div class="doc-eyebrow">Getting Started</div>
+        <h1>Install, run, mine.</h1>
+        <p class="doc-sub">Get a Lattice node running on your machine in under five minutes. Join the network, sync the chain, and start mining blocks.</p>
+    </div>
+</section>
+
+<section class="doc-content">
+    <div class="container">
+
+        <h2 id="requirements"><span class="step-num">1</span> Requirements</h2>
+
+        <ul>
+            <li><strong>macOS 14+</strong> or <strong>Ubuntu 22.04+</strong></li>
+            <li><strong>Swift 6.0+</strong> &mdash; <a href="https://www.swift.org/install/" style="color: var(--cyan);">swift.org/install</a></li>
+            <li><strong>4 GB RAM</strong> minimum (8 GB recommended for mining)</li>
+            <li><strong>10 GB disk</strong> for chain data (grows over time)</li>
+        </ul>
+
+        <div class="info-box">
+            <p><strong>Docker users:</strong> Skip to the <a href="#docker" style="color: var(--cyan);">Docker section</a> below if you prefer containers.</p>
+        </div>
+
+        <h2 id="install"><span class="step-num">2</span> Install from source</h2>
+
+        <h3>Clone and build</h3>
+<pre><code><span class="cm"># Clone the node</span>
+<span class="cmd">git clone</span> https://github.com/treehauslabs/lattice-node.git
+<span class="cmd">cd</span> lattice-node
+
+<span class="cm"># Build in release mode</span>
+<span class="cmd">swift build</span> <span class="flag">-c release</span>
+</code></pre>
+
+        <p>The binary is at <code>.build/release/LatticeNode</code>. Optionally copy it to your PATH:</p>
+
+<pre><code><span class="cmd">cp</span> .build/release/LatticeNode /usr/local/bin/lattice-node</code></pre>
+
+        <h2 id="run"><span class="step-num">3</span> Run a node</h2>
+
+        <h3>Start on mainnet</h3>
+<pre><code><span class="cmd">lattice-node</span> node <span class="flag">--data-dir</span> <span class="str">~/.lattice</span></code></pre>
+
+        <p>The node will:</p>
+        <ol>
+            <li>Create the data directory if it doesn't exist</li>
+            <li>Connect to bootstrap peers via hardcoded seeds and DNS</li>
+            <li>Sync the chain (snapshot sync by default &mdash; downloads recent blocks only)</li>
+            <li>Begin relaying blocks and transactions to the network</li>
+        </ol>
+
+        <h3>Common options</h3>
+<pre><code><span class="cmd">lattice-node</span> node \
+  <span class="flag">--data-dir</span> <span class="str">~/.lattice</span> \
+  <span class="flag">--rpc-port</span> <span class="val">8545</span> \
+  <span class="flag">--p2p-port</span> <span class="val">30303</span> \
+  <span class="flag">--rpc-auth</span> \
+  <span class="flag">--log-level</span> <span class="str">info</span>
+</code></pre>
+
+        <ul>
+            <li><code>--rpc-port</code> &mdash; HTTP RPC port (default: 8545)</li>
+            <li><code>--p2p-port</code> &mdash; P2P listen port (default: 30303)</li>
+            <li><code>--rpc-auth</code> &mdash; Enable bearer token auth (writes token to <code>&lt;data-dir&gt;/.cookie</code>)</li>
+            <li><code>--log-level</code> &mdash; <code>debug</code>, <code>info</code>, <code>warning</code>, <code>error</code></li>
+        </ul>
+
+        <h3>Check sync status</h3>
+<pre><code><span class="cmd">curl</span> http://localhost:8545/api/chain/info | python3 -m json.tool</code></pre>
+
+<pre><code>{
+  <span class="str">"height"</span>: <span class="val">142857</span>,
+  <span class="str">"tip"</span>: <span class="str">"baguqeera..."</span>,
+  <span class="str">"syncing"</span>: <span class="val">false</span>,
+  <span class="str">"mining"</span>: <span class="val">false</span>,
+  <span class="str">"mempool"</span>: <span class="val">23</span>,
+  <span class="str">"peers"</span>: <span class="val">8</span>
+}</code></pre>
+
+        <h2 id="mine"><span class="step-num">4</span> Mine</h2>
+
+        <p>Mining requires a key pair. Generate one first if you haven't already (see the <a href="keys.html" style="color: var(--cyan);">Key Management</a> guide).</p>
+
+<pre><code><span class="cm"># Generate a key pair</span>
+<span class="cmd">lattice-node</span> keys generate <span class="flag">--output</span> <span class="str">~/.lattice/miner.key</span>
+
+<span class="cm"># Start mining</span>
+<span class="cmd">lattice-node</span> node \
+  <span class="flag">--data-dir</span> <span class="str">~/.lattice</span> \
+  <span class="flag">--mine</span> \
+  <span class="flag">--miner-key</span> <span class="str">~/.lattice/miner.key</span>
+</code></pre>
+
+        <p>The miner uses <strong>(CPU cores - 1)</strong> parallel workers by default. Each worker searches a disjoint nonce range. When a valid block is found:</p>
+        <ol>
+            <li>Block is stored in local CAS</li>
+            <li>Pushed to connected peers</li>
+            <li>Chain state updated and mempool pruned</li>
+        </ol>
+
+        <div class="info-box">
+            <p><strong>Block reward:</strong> The initial reward is <strong>1,048,576</strong> units per block. Rewards halve every 17,592,186,044,416 blocks. The coinbase transaction credits reward + fees to your miner address.</p>
+        </div>
+
+        <h3>Merged mining</h3>
+        <p>If the node is configured with child chains, mining a Nexus block automatically produces valid blocks for all child chains. No additional work required &mdash; child blocks are embedded in the parent block's <code>childBlocks</code> field.</p>
+
+        <h2 id="devnet"><span class="step-num">5</span> Run a local devnet</h2>
+
+        <p>For development and testing, spin up an isolated network:</p>
+
+<pre><code><span class="cm"># Single-node devnet with instant mining</span>
+<span class="cmd">lattice-node</span> devnet \
+  <span class="flag">--nodes</span> <span class="val">1</span> \
+  <span class="flag">--data-dir</span> <span class="str">~/.lattice-devnet</span>
+</code></pre>
+
+<pre><code><span class="cm"># Multi-node local cluster</span>
+<span class="cmd">lattice-node</span> cluster \
+  <span class="flag">--nodes</span> <span class="val">4</span> \
+  <span class="flag">--data-dir</span> <span class="str">~/.lattice-cluster</span>
+</code></pre>
+
+        <p>Devnet uses lower difficulty so blocks are found immediately. The cluster command starts multiple nodes that discover each other via mDNS.</p>
+
+        <h2 id="docker"><span class="step-num">6</span> Docker</h2>
+
+<pre><code><span class="cm"># Run a node</span>
+<span class="cmd">docker run</span> <span class="flag">-d</span> \
+  <span class="flag">--name</span> lattice \
+  <span class="flag">-p</span> <span class="val">8545</span>:8545 \
+  <span class="flag">-p</span> <span class="val">30303</span>:30303 \
+  <span class="flag">-v</span> lattice-data:/data \
+  ghcr.io/treehauslabs/lattice-node \
+  node <span class="flag">--data-dir</span> <span class="str">/data</span>
+</code></pre>
+
+<pre><code><span class="cm"># Run with mining</span>
+<span class="cmd">docker run</span> <span class="flag">-d</span> \
+  <span class="flag">--name</span> lattice-miner \
+  <span class="flag">-p</span> <span class="val">8545</span>:8545 \
+  <span class="flag">-p</span> <span class="val">30303</span>:30303 \
+  <span class="flag">-v</span> lattice-data:/data \
+  <span class="flag">-v</span> ~/.lattice/miner.key:/keys/miner.key:ro \
+  ghcr.io/treehauslabs/lattice-node \
+  node <span class="flag">--data-dir</span> <span class="str">/data</span> <span class="flag">--mine</span> <span class="flag">--miner-key</span> <span class="str">/keys/miner.key</span>
+</code></pre>
+
+        <h2 id="nexus-params">Nexus chain parameters</h2>
+
+        <p>The Nexus genesis chain ships with these defaults:</p>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 16px; color: var(--text-dim); font-size: 0.85rem;">Target block time</td>
+                    <td style="padding: 10px 16px; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--cyan);">10 seconds</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 16px; color: var(--text-dim); font-size: 0.85rem;">Initial reward</td>
+                    <td style="padding: 10px 16px; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--cyan);">1,048,576</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 16px; color: var(--text-dim); font-size: 0.85rem;">Max transactions/block</td>
+                    <td style="padding: 10px 16px; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--cyan);">5,000</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 16px; color: var(--text-dim); font-size: 0.85rem;">Difficulty adjustment</td>
+                    <td style="padding: 10px 16px; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--cyan);">Every 120 blocks (~20 min)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 10px 16px; color: var(--text-dim); font-size: 0.85rem;">Max block size</td>
+                    <td style="padding: 10px 16px; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--cyan);">10 MB</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px 16px; color: var(--text-dim); font-size: 0.85rem;">Genesis</td>
+                    <td style="padding: 10px 16px; font-family: 'SF Mono', monospace; font-size: 0.85rem; color: var(--cyan);">March 22, 2025 UTC</td>
+                </tr>
+            </table>
+        </div>
+
+        <h2 id="next">Next steps</h2>
+
+        <ul>
+            <li><a href="keys.html" style="color: var(--cyan);"><strong>Key Management</strong></a> &mdash; generate, backup, and restore key pairs</li>
+            <li><a href="api.html" style="color: var(--cyan);"><strong>RPC API Reference</strong></a> &mdash; query the node programmatically</li>
+            <li><a href="cli.html" style="color: var(--cyan);"><strong>CLI Reference</strong></a> &mdash; all available commands</li>
+            <li><a href="gateway.html" style="color: var(--cyan);"><strong>Gateway</strong></a> &mdash; HTTP/JSON-RPC gateway interface</li>
+        </ul>
+
+    </div>
+</section>
+
+<footer>
+    <div class="inner">
+        <span>Built by <a href="https://github.com/treehauslabs">Treehaus Labs</a></span>
+        <span>Swift 6 &middot; macOS &middot; Linux &middot; Docker</span>
+    </div>
+</footer>
+
+</body>
+</html>
