@@ -23,6 +23,8 @@ We present Lattice, a system that resolves this tension through three key ideas:
 
 3. **CAS-first block propagation.** All blockchain data is content-addressed. Transactions gossiped through the mempool are stored locally by their content identifier. When a block is announced, receiving nodes reconstruct it from their local CAS, fetching only genuinely new data (coinbase, state roots) from the network. This reduces relay bandwidth by approximately 99% for transaction-heavy blocks.
 
+4. **Incentivized content delivery.** The Ivy peer-to-peer layer introduces an economic model for data retrieval. Bilateral credit lines between peers enable fee-based DHT forwarding with pay-on-success semantics: requesters set a total fee budget, each relay hop deducts a relay fee, and the data provider keeps the remainder. Trust grows logarithmically with successful settlements, and proof-of-work mining doubles as settlement — miners pay off credit line debts with real work.
+
 ---
 
 ## 2. Content-Addressed Storage
@@ -260,9 +262,33 @@ Each peer announcement includes a protocol version number, enabling coordinated 
 
 ---
 
-## 9. Economics
+## 9. Ivy Economic Layer
 
-### 9.1 Nexus Parameters
+### 9.1 Bilateral Credit Lines
+
+Each pair of directly connected peers maintains a bilateral credit line — an IOU tracking the net balance of data served vs. consumed. When peer A serves data to peer B, B's balance decreases (debt to A increases). Credit lines have a threshold that limits maximum debt; the threshold grows logarithmically with successful settlements, bootstrapping from a minimum trust derived from proof-of-work key difficulty (trailing zero bits of SHA-256 of the peer's public key).
+
+### 9.2 Fee-Bid Model
+
+Content retrieval uses a fee-bid model. The requester sets a total fee budget for a `dhtForward` request. Each relay node deducts a `relayFee` and forwards the remainder. The destination node (data provider) keeps whatever fee remains. This creates natural incentives: closer data is cheaper to retrieve, and popular data gets cached by relay nodes (who then serve it for the full fee on future requests).
+
+### 9.3 Pay-on-Success
+
+Fees are only charged when data successfully returns through the relay chain. If a request times out or the data isn't found, no credit line adjustment occurs. This eliminates griefing attacks where a peer could drain a neighbor's credit by sending unanswerable requests.
+
+### 9.4 Pin Discovery
+
+Nodes that store data publish pin announcements to the DHT, declaring which content identifiers they serve and under what selector paths. When a node needs data, it first discovers pinners via `findPins`, then sends targeted `dhtForward` requests routed toward the pinner's public key rather than the content hash — ensuring the request reaches the actual data holder.
+
+### 9.5 Settlement via Mining
+
+Credit line debts are settled through proof-of-work. When a node mines a block, the mining proof (nonce + block hash) is submitted to creditors as a settlement message. The creditor verifies the work meets the agreed difficulty and credits the debtor's balance. This means mining simultaneously secures the blockchain and services the economic layer — miners naturally earn credit with their peers.
+
+---
+
+## 10. Economics
+
+### 10.1 Nexus Parameters
 
 | Parameter | Value |
 |-----------|-------|
@@ -274,17 +300,17 @@ Each peer announcement includes a protocol version number, enabling coordinated 
 | Max transactions/block | 5,000 |
 | Max block size | 10 MB |
 
-### 9.2 Child Chain Economics
+### 10.2 Child Chain Economics
 
 Each child chain defines its own economic parameters — block time, reward schedule, halving interval — independent of the Nexus chain. This enables application-specific tokenomics while inheriting Nexus-level security.
 
-### 9.3 Fee Market
+### 10.3 Fee Market
 
 Transactions include an explicit fee. Miners select transactions by fee descending, creating a fee market where users compete for block space. Replace-by-fee (RBF) allows users to increase the fee on a pending transaction by at least 10%.
 
 ---
 
-## 10. Related Work
+## 11. Related Work
 
 **Bitcoin** [1] introduced proof-of-work consensus and the UTXO transaction model. Lattice builds on Bitcoin's security model while replacing UTXOs with explicit balance changes and adding native multi-chain support.
 
@@ -292,19 +318,21 @@ Transactions include an explicit fee. Miners select transactions by fee descendi
 
 **Namecoin** [6] pioneered merged mining, allowing a child chain to reuse the parent's proof-of-work. Lattice generalizes this to an arbitrary tree of child chains embedded directly in the parent block structure.
 
-**IPFS/Filecoin** [7] demonstrated content-addressed storage for distributed systems. Lattice applies the same principle to blockchain data, using CIDs as the universal reference mechanism for blocks, transactions, and state.
+**IPFS/Filecoin** [7] demonstrated content-addressed storage for distributed systems. Lattice applies the same principle to blockchain data, using CIDs as the universal reference mechanism for blocks, transactions, and state. Unlike Filecoin's proof-of-storage consensus, Ivy's economic layer uses bilateral credit lines with pay-on-success fees — a lighter-weight approach that doesn't require on-chain storage proofs.
 
 **Ethereum PBSS** [8] introduced path-based state storage to replace hash-based storage, reducing disk growth by an order of magnitude. Lattice adopts this pattern, using SQLite as a path-indexed cache over the CAS merkle trees.
 
 ---
 
-## 11. Conclusion
+## 12. Conclusion
 
 Lattice demonstrates that content-addressed storage, when used as the foundational layer of a blockchain, enables a constellation of improvements to multi-chain security, state management, and network efficiency.
 
 Merged mining through content-addressed child blocks provides a clean solution to the security fragmentation problem: new chains inherit full parent-chain security at zero marginal cost. Structural state diffing eliminates the need for transaction replay during state extraction, reorg recovery, and post-sync state rebuild. CAS-aware block propagation reduces relay bandwidth by approximately 99% by exploiting the fact that transaction data is already distributed via mempool gossip.
 
-The system is operational, with a reference implementation, formal protocol specification, and deployment tooling available at https://github.com/treehauslabs.
+The Ivy economic layer completes the picture: nodes earn revenue by storing and serving data, credit lines enable trust to grow organically, and proof-of-work mining doubles as settlement — creating a self-sustaining network where every participant is incentivized to contribute storage, bandwidth, and computation.
+
+The system is operational, with a reference implementation, 158 passing tests, and deployment tooling for Fly.io available at https://github.com/treehauslabs.
 
 ---
 
