@@ -81,11 +81,11 @@ A Nexus block template includes a `childBlocks` field — a content-addressed di
 The proof-of-work hash covers the entire block structure including child block CIDs:
 
 ```
-hash_input = prevBlockCID || txCID || difficulty || ... || childBlocksCID || height || timestamp
-valid iff difficulty >= hash(hash_input + nonce)
+hash_input = prevBlockCID || 0x00 || txCID || 0x00 || difficulty || 0x00 || ... || childBlocksCID || 0x00 || height || 0x00 || timestamp || 0x00 || nonce
+valid iff difficulty >= hash(hash_input)
 ```
 
-Since `childBlocksCID` is included in the hash input, the child blocks are immutably bound to the parent's proof-of-work. An attacker cannot modify a child block without invalidating the parent block's hash.
+Each field is separated by a `0x00` byte to prevent length-extension collisions where the concatenation of two different field pairs could produce the same byte sequence. Since `childBlocksCID` is included in the hash input, the child blocks are immutably bound to the parent's proof-of-work. An attacker cannot modify a child block without invalidating the parent block's hash.
 
 ### 3.4 Security Analysis
 
@@ -97,13 +97,16 @@ This contrasts with independent PoW chains, where security is proportional to ea
 
 ## 4. State Management
 
-### 4.1 Dual State Representation
+### 4.1 Three-Phase State Representation
 
-Each block contains two state roots:
+Each block contains three state roots:
+- **Parent Homestead**: the parent chain's state at the time of this block (child chains only)
 - **Homestead**: the state root *before* the block's transactions are applied
 - **Frontier**: the state root *after* the block's transactions are applied
 
-Both are CIDs pointing into the merkle state tree. The homestead of block *N* equals the frontier of block *N-1*.
+All are CIDs pointing into the merkle state tree. The homestead of block *N* equals the frontier of block *N-1*. The parent homestead enables trustless cross-chain verification: a child chain block can prove facts about the parent chain's state without querying the parent at validation time.
+
+Each state root is itself a composite of seven independent Sparse Merkle Trees, updated concurrently: accounts (balances), general key-value state, swaps (locked cross-chain funds), settlements (confirmed cross-chain matches), peers (network identity), genesis blocks (child chain specifications), and transactions (nonce tracking per signer group).
 
 ### 4.2 Structural State Diffing
 
@@ -175,33 +178,42 @@ In practice, *p* > 0.99 for blocks produced shortly after mempool propagation, y
 
 ### 6.1 Account Actions
 
-Lattice uses an explicit balance-change model rather than an opcode-based virtual machine. A transaction contains a list of `AccountAction` entries, each specifying:
+Lattice uses an explicit delta-based balance model rather than an opcode-based virtual machine. A transaction contains a list of `AccountAction` entries, each specifying:
 
-- `owner`: the account address
-- `oldBalance`: the account's current balance (verified against state)
-- `newBalance`: the desired balance after this action
+- `owner`: the account address (content hash of the signer's compressed public key)
+- `delta`: a signed integer balance change (negative for debits, positive for credits)
 
-The node verifies that `oldBalance` matches the on-chain balance and that the conservation law holds across all actions:
+The node verifies the conservation law across all actions in a transaction:
 
 ```
-sum(debits) = sum(credits) + fee
+sum(|debits|) = sum(credits) + fee
 ```
 
-where a debit is `oldBalance - newBalance` for accounts whose balance decreases, and a credit is `newBalance - oldBalance` for accounts whose balance increases.
+where debits are actions with negative deltas and credits are actions with positive deltas. The node also verifies that the sender has sufficient balance for the total debit amount. This delta model is simpler than tracking both old and new balances, and avoids a class of bugs where stale balance reads could cause silent state corruption.
 
-### 6.2 Atomic Swaps
+### 6.2 Transaction Authentication
 
-Transactions may include `SwapAction` and `SwapClaimAction` entries for cross-account atomic swaps. These are validated as part of the same conservation check, ensuring atomicity without an intermediary.
+Each transaction is signed using secp256k1 ECDSA with 33-byte compressed public keys and 64-byte compact (r||s) signatures. The signature is computed over the transaction body's content identifier (CID), which includes all body fields. Since the body is content-addressed, any modification invalidates the signature.
 
-### 6.3 MEV Protection
+**Cross-chain replay protection.** Every transaction body includes a `chainPath` field — an array of directory names tracing the path from the Nexus root to the target chain (e.g., `["Nexus"]` or `["Nexus", "Payments"]`). During validation, the node rejects any transaction whose `chainPath` does not match the validating chain's position in the hierarchy. Since `chainPath` is part of the content-addressed body, it is implicitly covered by the signature.
 
-For the built-in decentralized exchange, a commit-reveal batch auction mechanism prevents miner front-running:
+**Sequential nonces.** Each transaction carries a `nonce` field. Transactions from the same signer group (determined by the sorted set of signers) must have sequential nonces: the first transaction for a signer group uses nonce 0, and each subsequent transaction increments by 1. The consensus layer tracks the latest confirmed nonce per signer group in the transaction state merkle tree and rejects blocks containing nonce gaps or duplicates.
 
-1. **Commit phase**: Users submit a hash of their order details plus a random salt
-2. **Reveal phase**: After a 3-block waiting period, users reveal their actual order
-3. **Settlement**: All revealed orders in a batch are matched simultaneously at midpoint prices
+### 6.3 Cross-Chain Value Transfer
 
-This eliminates the information advantage that miners would otherwise have from seeing pending orders in the mempool.
+Value moves between chains through a three-phase swap protocol verified entirely by Merkle proofs:
+
+1. **Swap.** A `SwapAction` locks funds on the source chain, specifying the sender, recipient, amount, a unique nonce, and a timelock (block height). The locked funds are recorded in the chain's swap state merkle tree.
+
+2. **Settle.** Once matching swaps exist on two chains, both parties submit a `SettleAction` referencing the swap keys and directories of both chains. The settlement is recorded in the settle state merkle tree.
+
+3. **Claim.** The recipient submits a `SwapClaimAction` to claim the locked funds by proving that a matching settlement exists in the settle state. If the timelock expires without settlement, the sender can reclaim the funds via a refund claim.
+
+This protocol requires no bridges, relayers, or trusted third parties. Cross-chain state is verified through Merkle proofs against state roots already committed in blocks.
+
+### 6.4 Stateless Block Verification
+
+Block verification is stateless: the verifying node does not need to maintain a full copy of the chain state in memory. Each block contains homestead and frontier state roots, and all intermediate state — account balances, nonce counters, swap entries — is resolved on demand through the content-addressed Fetcher protocol. The Fetcher resolves CIDs through the three-tier cache (memory, disk, network), so a node can verify a block by fetching only the state entries touched by that block's transactions.
 
 ---
 
@@ -209,7 +221,7 @@ This eliminates the information advantage that miners would otherwise have from 
 
 ### 7.1 Proof of Work
 
-A block is valid when `difficulty >= hash(block_prefix + nonce)`, where the block prefix includes all block fields except the nonce. Miners search for valid nonces using parallel workers across CPU cores.
+A block is valid when `difficulty >= hash(block_fields)`, where block fields are concatenated with `0x00` separators (see Section 3.3). The block must also satisfy timestamp bounds (greater than median-time-past of ancestors, within 2 hours of network time), transaction conservation, sequential nonces, and chain path correctness. Miners search for valid nonces using parallel workers across CPU cores.
 
 ### 7.2 Heaviest Chain Rule
 
@@ -312,9 +324,9 @@ Transactions include an explicit fee. Miners select transactions by fee descendi
 
 ## 11. Related Work
 
-**Bitcoin** [1] introduced proof-of-work consensus and the UTXO transaction model. Lattice builds on Bitcoin's security model while replacing UTXOs with explicit balance changes and adding native multi-chain support.
+**Bitcoin** [1] introduced proof-of-work consensus and the UTXO transaction model. Lattice builds on Bitcoin's security model while replacing UTXOs with signed delta-based balance changes and adding native multi-chain support. Both use secp256k1 ECDSA for transaction signing.
 
-**Ethereum** [5] introduced stateful accounts and a Turing-complete virtual machine. Lattice takes a simpler approach: explicit account actions rather than general computation, with state transitions derived from merkle diffs rather than VM execution.
+**Ethereum** [5] introduced stateful accounts and a Turing-complete virtual machine. Lattice takes a simpler approach: explicit account actions with signed deltas rather than general computation, with state transitions derived from merkle diffs rather than VM execution. Like Ethereum, Lattice enforces sequential nonces per account to prevent replay attacks.
 
 **Namecoin** [6] pioneered merged mining, allowing a child chain to reuse the parent's proof-of-work. Lattice generalizes this to an arbitrary tree of child chains embedded directly in the parent block structure.
 
@@ -332,7 +344,7 @@ Merged mining through content-addressed child blocks provides a clean solution t
 
 The Ivy economic layer completes the picture: nodes earn revenue by storing and serving data, credit lines enable trust to grow organically, and proof-of-work mining doubles as settlement — creating a self-sustaining network where every participant is incentivized to contribute storage, bandwidth, and computation.
 
-The system is operational, with a reference implementation, 158 passing tests, and deployment tooling for Fly.io available at https://github.com/treehauslabs.
+The system is operational, with a reference implementation, 688 passing tests across the protocol library and full node, and deployment tooling for Docker, Fly.io, and Terraform available at https://github.com/treehauslabs.
 
 ---
 
