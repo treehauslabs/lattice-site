@@ -326,7 +326,7 @@
                 <span class="method get">GET</span>
                 <span class="endpoint-path">/api/nonce/{address}</span>
             </div>
-            <div class="endpoint-desc">Current nonce for the given address. Used for transaction construction.</div>
+            <div class="endpoint-desc">Next valid nonce for the given address. Returns stored + 1 for accounts that have transacted, 0 for fresh accounts. Used for transaction construction.</div>
         </div>
 
         <div class="endpoint">

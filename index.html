@@ -609,7 +609,7 @@
             </div>
             <div class="metric fi d3">
                 <div class="metric-val wh">&infin;</div>
-                <div class="metric-label">Adaptive storage<br>256 MB to terabytes</div>
+                <div class="metric-label">Volume-granular storage<br>256 MB to terabytes</div>
             </div>
         </div>
     </div>
@@ -675,9 +675,9 @@
             </div>
             <div class="pillar fi d3">
                 <div class="pillar-icon">&#9670;</div>
-                <h3>Adaptive Storage</h3>
-                <div class="accent">Contribute what you can</div>
-                <p>Nodes choose how much memory and disk to commit. XOR distance determines what each node stores. The network self-organizes data redundancy without coordination.</p>
+                <h3>Volume-Granular Storage</h3>
+                <div class="accent">Pin what matters</div>
+                <p>Data is stored and evicted at Volume granularity with owner-based ref-counted pins. Block and state retention are independent axes. Nodes choose how much to keep — from tip-only to full archival.</p>
             </div>
         </div>
     </div>
@@ -695,7 +695,7 @@
                 <div class="layer-name l4">Node</div>
                 <div class="layer-chips">
                     <a href="https://github.com/treehauslabs/lattice-node" class="chip l4">LatticeNode</a>
-                    <span class="layer-note">Multi-chain miner &middot; Merged mining &middot; Adaptive storage &middot; Docker</span>
+                    <span class="layer-note">Multi-chain miner &middot; Merged mining &middot; Volume-granular storage &middot; Docker</span>
                 </div>
             </div>
             <div class="layer fi">
@@ -716,10 +716,8 @@
             <div class="layer fi d2">
                 <div class="layer-name l2">Storage</div>
                 <div class="layer-chips">
-                    <a href="https://github.com/treehauslabs/Acorn" class="chip l2">Acorn</a>
-                    <a href="https://github.com/treehauslabs/AcornMemoryWorker" class="chip l2">Memory</a>
-                    <a href="https://github.com/treehauslabs/AcornDiskWorker" class="chip l2">Disk</a>
-                    <span class="layer-note">CAS chain: memory &rarr; disk &rarr; network</span>
+                    <a href="https://github.com/treehauslabs/VolumeBroker" class="chip l2">VolumeBroker</a>
+                    <span class="layer-note">Volume-granular storage: MemoryBroker &rarr; DiskBroker &rarr; Ivy</span>
                 </div>
             </div>
             <div class="layer fi d3">
@@ -812,7 +810,7 @@
                     </svg>
                     Lattice
                 </a>
-                <p>Hierarchical blockchains built in Swift. Merged mining, trustless cross-chain, adaptive storage.</p>
+                <p>Hierarchical blockchains built in Swift. Merged mining, trustless cross-chain, Volume-granular storage.</p>
             </div>
             <div class="footer-links">
                 <div class="footer-col">
@@ -824,7 +822,7 @@
                     <h4>Infrastructure</h4>
                     <a href="https://github.com/treehauslabs/Ivy">Ivy</a>
                     <a href="https://github.com/treehauslabs/Tally">Tally</a>
-                    <a href="https://github.com/treehauslabs/Acorn">Acorn</a>
+                    <a href="https://github.com/treehauslabs/VolumeBroker">VolumeBroker</a>
                 </div>
                 <div class="footer-col">
                     <h4>Docs</h4>

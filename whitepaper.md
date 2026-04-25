@@ -41,13 +41,15 @@ where `serialize` uses sorted-key JSON encoding and `hash` produces a 256-bit di
 
 ### 2.2 Three-Tier Resolution
 
-Objects are stored in a three-tier cache hierarchy:
+Data is stored and fetched at Volume granularity — a Volume is an atomic unit consisting of a root CID and all its entry CIDs with their serialized data. The storage cascade has three tiers:
 
-- **Memory**: In-process LRU cache for hot data
-- **Disk**: Persistent key-value store for local data
-- **Network**: Peer-to-peer fetch via the Ivy protocol for missing data
+- **MemoryBroker**: Per-chain in-process LRU cache for hot Volumes
+- **DiskBroker**: Shared SQLite-backed durable store for all chains (WAL journaling, CAS dedup across Volumes)
+- **Ivy network**: Peer-to-peer fetch via the Ivy protocol for missing Volumes
 
-When a CID is requested, the system checks each tier in order. This means data gossiped via the mempool (stored locally) is never re-fetched during block reconstruction — a property we exploit for bandwidth-efficient block propagation.
+Retention is controlled by owner-based ref-counted pins. Each Volume root can be pinned by multiple owners (e.g., `"Nexus:42"` for block 42 on the Nexus chain). Pins carry a reference count — the same owner can pin multiple times, and each unpin decrements the count. Data is evictable only when all owners have released all their pins. This model supports two orthogonal retention policies: `BlockRetention` (tip/retention/historical) controls when block data is unpinned, and `StorageMode` (stateless/stateful/historical) controls when replaced state roots are unpinned via `StateDiff`.
+
+When a CID is requested, the system checks each tier in order. Data gossiped via the mempool (stored locally) is never re-fetched during block reconstruction — a property we exploit for bandwidth-efficient block propagation.
 
 ### 2.3 Merkle Data Structures
 
